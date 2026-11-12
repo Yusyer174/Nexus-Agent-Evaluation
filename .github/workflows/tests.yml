@@ -26,3 +26,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Run synthetic example
         run: python evaluator.py examples/cases.json examples/predictions.json
+      - name: Install local package
+        run: python -m pip install .
+      - name: Check installed command
+        run: nexus-evaluate examples/cases.json examples/predictions.json

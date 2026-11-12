@@ -5,7 +5,7 @@
 
 A small, dependency-free Python tool for evaluating structured AI-agent decisions against explicit test cases. Inspired by the NEXUS project's emphasis on auditable decisions, permission boundaries, and independent validation.
 
-**Status:** Early standalone prototype (v0.1.0). This is a new implementation, not an extraction from or verified integration with the private NEXUS codebase. No claims of adoption or production readiness are made.
+**Status:** Early standalone prototype (v0.2.0). This is a new implementation, not an extraction from or verified integration with the private NEXUS codebase. No claims of adoption or production readiness are made.
 
 ## Quick start
 
@@ -16,12 +16,24 @@ python evaluator.py examples/cases.json examples/predictions.json
 python -m unittest discover -s tests -v
 ```
 
+### Install locally
+
+From a clone of this repository, run:
+
+```bash
+python -m pip install .
+nexus-evaluate examples/cases.json examples/predictions.json
+```
+
+This installs the local package; it is not published to PyPI. There are no runtime dependencies (installation may download build tools).
+
 On Windows use `py` instead of `python` if needed.
 
 The example contains synthetic cases; all three example predictions are deliberately correct. This does not measure the performance of a real model.
 
 ## Project layout
 
+- `pyproject.toml`: package metadata and CLI entry point.
 - `evaluator.py`: evaluation logic and command-line interface.
 - `examples/`: synthetic cases and example predictions.
 - `tests/`: automated regression tests.
@@ -37,7 +49,7 @@ The example contains synthetic cases; all three example predictions are delibera
 python evaluator.py my-cases.json my-predictions.json --output report.json --min-pass-rate 0.9
 ```
 
-A case passes when the decision matches exactly, all declared actions are allowed, and all required evidence identifiers are present. Missing or malformed outputs fail their case. Critical-case failures and unexpected case IDs always block acceptance, regardless of the pass rate. By default, acceptance also requires every case to pass. The report separates the critical gate from the overall acceptance result. Exit codes: 0 accepted, 1 rejected, 2 invalid input or file error.
+A case passes when the decision matches exactly, all declared actions are allowed, and all required evidence identifiers are present. Missing or malformed outputs fail their case. Duplicate JSON keys are rejected as invalid input. Critical-case failures and unexpected case IDs always block acceptance, regardless of the pass rate. By default, acceptance also requires every case to pass. The report separates the critical gate from the overall acceptance result. Exit codes: 0 accepted, 1 rejected, 2 invalid input or file error.
 
 ## Design boundaries
 

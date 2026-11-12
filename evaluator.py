@@ -21,6 +21,20 @@ def _strings(value: Any, field: str) -> list[str]:
     return value
 
 
+def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject duplicate JSON keys rather than silently accepting the last value."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _load_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
+
+
 def evaluate(cases: Any, predictions: Any) -> dict[str, Any]:
     """Compare agent outputs against explicit expectations; fail closed on critical cases.
 
@@ -31,6 +45,8 @@ def evaluate(cases: Any, predictions: Any) -> dict[str, Any]:
         raise ValueError("cases must be a non-empty list")
     if not isinstance(predictions, dict):
         raise ValueError("predictions must be an object keyed by case ID")
+    for key in predictions:
+        _text(key, 'prediction ID')
     seen = set()
     results = []
     for case in cases:
@@ -86,8 +102,7 @@ def main() -> int:
     if not 0 <= args.min_pass_rate <= 1:
         parser.error("--min-pass-rate must be in [0, 1]")
     try:
-        report = evaluate(json.loads(args.cases.read_text(encoding="utf-8")),
-                          json.loads(args.predictions.read_text(encoding="utf-8")))
+        report = evaluate(_load_json(args.cases), _load_json(args.predictions))
         report["minimum_pass_rate"] = args.min_pass_rate
         report["accepted"] = report["gate_passed"] and report["pass_rate"] >= args.min_pass_rate
         output = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
