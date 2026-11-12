@@ -1,5 +1,8 @@
 # NEXUS Agent Evaluation
 
+[![Tests](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/tests.yml/badge.svg)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/tests.yml)
+
+
 A small, dependency-free Python tool for evaluating structured AI-agent decisions against explicit test cases. Inspired by the NEXUS project's emphasis on auditable decisions, permission boundaries, and independent validation.
 
 **Status:** Early standalone prototype (v0.1.0). This is a new implementation, not an extraction from or verified integration with the private NEXUS codebase. No claims of adoption or production readiness are made.
@@ -16,6 +19,13 @@ python -m unittest discover -s tests -v
 On Windows use `py` instead of `python` if needed.
 
 The example contains synthetic cases; all three example predictions are deliberately correct. This does not measure the performance of a real model.
+
+## Project layout
+
+- `evaluator.py`: evaluation logic and command-line interface.
+- `examples/`: synthetic cases and example predictions.
+- `tests/`: automated regression tests.
+- `CONTRIBUTING.md`: how to propose changes and test them.
 
 ## Evaluate your own agent
 
@@ -39,8 +49,8 @@ A case passes when the decision matches exactly, all declared actions are allowe
 
 ## Contributing
 
-Bug reports, additional synthetic scenarios, and reproducible test improvements are welcome. Include a test for behavior changes. Never include credentials, private data, or proprietary agent outputs in an issue or pull request.
+Bug reports, additional synthetic scenarios, and reproducible test improvements are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidance.
 
 ## License
 
-MIT, subject to the repository's LICENSE file. The standalone implementation is provided for review before publication.
+[MIT](LICENSE).
