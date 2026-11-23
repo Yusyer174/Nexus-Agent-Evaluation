@@ -2,6 +2,10 @@
 
 ## Unreleased (changes merged 2026-11-23)
 
+- Add a standalone GitHub composite action, a smoke-test workflow, and a copyable downstream CI example.
+- Provide an independent five-minute trial with accepted and rejected synthetic predictions.
+- Provide a structured, privacy-conscious trial feedback issue template.
+
 - Protect the evaluator's input files from accidental overwrite through `--output`.
 - Expand regression coverage for output aliases, malformed cases and acceptance-gate edge cases.
 - Document the JSON integration contract, security disclosure and contributor workflow.
