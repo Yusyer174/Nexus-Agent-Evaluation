@@ -29,4 +29,8 @@ runs:
         NEXUS_MIN_PASS_RATE: ${{ inputs.min-pass-rate }}
         NEXUS_REPORT_PATH: ${{ inputs.report-path }}
       run: |
-        python "$GITHUB_ACTION_PATH/evaluator.py"           "$NEXUS_CASES"           "$NEXUS_PREDICTIONS"           --min-pass-rate "$NEXUS_MIN_PASS_RATE"           --output "$NEXUS_REPORT_PATH"
+        python "$GITHUB_ACTION_PATH/evaluator.py" \
+          "$NEXUS_CASES" \
+          "$NEXUS_PREDICTIONS" \
+          --min-pass-rate "$NEXUS_MIN_PASS_RATE" \
+          --output "$NEXUS_REPORT_PATH"
