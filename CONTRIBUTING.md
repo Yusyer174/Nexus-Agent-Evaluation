@@ -20,3 +20,7 @@ Describe the expected and actual behavior, the Python version, and a minimal rep
 ## Pull requests
 
 Explain the problem and the proposed change, link any relevant issue, and report the tests you ran. Preserve deterministic evaluation and fail-closed handling of critical cases. Keep changes focused; documentation corrections are welcome.
+
+## Integration and security
+
+See [docs/INTEGRATION.md](docs/INTEGRATION.md) for the public schema, gates and limitations. Run the CLI and its tests locally before submitting a PR. Security-sensitive findings should follow [SECURITY.md](SECURITY.md); public issues must contain no secrets or sensitive exploit details.
