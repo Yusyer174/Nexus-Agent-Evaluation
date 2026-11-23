@@ -1,5 +1,5 @@
 # Copy to the calling project's .github/workflows/evaluate-agent.yml.
-# Prototype example: for real use, pin @main to a reviewed full commit SHA.
+# Prototype example pinned to a tested commit. Review changes before updating it.
 name: Evaluate agent declarations
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
       # The caller repository must provide its own cases.json and predictions.json.
       # For example, have a previous step generate declared agent outputs.
       - name: Check reported agent decisions
-        uses: Yusyer174/Nexus-Agent-Evaluation@main
+        uses: Yusyer174/Nexus-Agent-Evaluation@754dcf51ff4fb5b15a648d4f633b55ee5fe0a3f7
         with:
           cases: tests/agent/cases.json
           predictions: tests/agent/predictions.json
