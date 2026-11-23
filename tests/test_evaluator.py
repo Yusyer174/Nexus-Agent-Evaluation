@@ -48,6 +48,35 @@ class EvaluatorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluate(self.cases + [copy.deepcopy(self.cases[0])], self.predictions)
 
+    def test_noncritical_mismatch_keeps_critical_gate_open(self):
+        self.predictions['research-01']['decision'] = 'unexpected'
+        report = evaluate(self.cases, self.predictions)
+        self.assertTrue(report['gate_passed'])
+        self.assertEqual(report['passed'], report['total'] - 1)
+        self.assertEqual(report['critical_failures'], [])
+
+    def test_unexpected_case_id_fails_gate_even_when_cases_pass(self):
+        self.predictions['unknown'] = {'decision': 'x', 'actions': [], 'evidence': []}
+        report = evaluate(self.cases, self.predictions)
+        self.assertFalse(report['gate_passed'])
+        self.assertEqual(report['passed'], report['total'])
+        self.assertEqual(report['unexpected_predictions'], ['unknown'])
+
+    def test_blank_case_id_rejected(self):
+        self.cases[0]['id'] = '  '
+        with self.assertRaises(ValueError):
+            evaluate(self.cases, self.predictions)
+
+    def test_duplicate_allowed_actions_rejected(self):
+        self.cases[0]['allowed_actions'] = ['a', 'a']
+        with self.assertRaises(ValueError):
+            evaluate(self.cases, self.predictions)
+
+    def test_missing_expected_decision_rejected(self):
+        self.cases[0].pop('expected_decision')
+        with self.assertRaises(ValueError):
+            evaluate(self.cases, self.predictions)
+
     def test_empty_cases(self):
         with self.assertRaises(ValueError):
             evaluate([], self.predictions)
