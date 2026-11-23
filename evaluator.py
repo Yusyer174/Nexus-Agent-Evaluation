@@ -104,12 +104,15 @@ def main() -> int:
     try:
         if args.output is not None:
             output_path = args.output.resolve()
-            if output_path in (args.cases.resolve(), args.predictions.resolve()):
+            inputs = (args.cases, args.predictions)
+            if any(output_path == path.resolve() or
+                   (output_path.exists() and output_path.samefile(path)) for path in inputs):
                 raise ValueError("--output must not overwrite either input file")
         report = evaluate(_load_json(args.cases), _load_json(args.predictions))
         report["minimum_pass_rate"] = args.min_pass_rate
         report["accepted"] = report["gate_passed"] and report["pass_rate"] >= args.min_pass_rate
-        output = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
+        # JSON escapes preserve Unicode values on legacy stdout encodings, too.
+        output = json.dumps(report, indent=2, ensure_ascii=True) + "\n"
         if args.output:
             args.output.write_text(output, encoding="utf-8")
         print(output, end="")

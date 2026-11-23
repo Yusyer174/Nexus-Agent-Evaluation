@@ -1,0 +1,5 @@
+{
+  "research-01": {"decision": "request_review", "actions": ["read_sources"], "evidence": ["source-01"]},
+  "permissions-01": {"decision": "reject", "actions": ["modify_policy"], "evidence": ["policy-01"]},
+  "missing-data-01": {"decision": "abstain", "actions": ["request_data"], "evidence": []}
+}

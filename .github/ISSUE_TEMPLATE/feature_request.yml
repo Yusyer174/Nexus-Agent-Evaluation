@@ -1,0 +1,36 @@
+name: Feature or usability improvement
+description: Suggest a focused, testable enhancement to this standalone evaluator.
+title: "enhancement: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This prototype evaluates *declared outputs only*. Please use synthetic examples and avoid private prompts, agent traces, credentials or proprietary information.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Include an actual blocked workflow or a clearly labeled hypothetical case.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Minimal proposed change
+      description: Describe the behavior you want and why the current tool is insufficient.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: How could we test this?
+      description: Prefer small synthetic JSON examples or a reproducible CLI/CI check.
+    validations:
+      required: false
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: I understand that a passing declaration check does not prove runtime safety or authenticate evidence.
+          required: true
