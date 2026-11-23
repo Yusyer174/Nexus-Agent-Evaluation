@@ -27,6 +27,8 @@ nexus-evaluate examples/cases.json examples/predictions.json
 
 This installs the local package; it is not published to PyPI. There are no runtime dependencies (installation may download build tools).
 
+See [Integration contract](docs/INTEGRATION.md) for the exact JSON schema, failure gates, exit codes and example integrations.
+
 On Windows use `py` instead of `python` if needed.
 
 The example contains synthetic cases; all three example predictions are deliberately correct. This does not measure the performance of a real model.
@@ -49,7 +51,7 @@ The example contains synthetic cases; all three example predictions are delibera
 python evaluator.py my-cases.json my-predictions.json --output report.json --min-pass-rate 0.9
 ```
 
-A case passes when the decision matches exactly, all declared actions are allowed, and all required evidence identifiers are present. Missing or malformed outputs fail their case. Duplicate JSON keys are rejected as invalid input. Critical-case failures and unexpected case IDs always block acceptance, regardless of the pass rate. By default, acceptance also requires every case to pass. The report separates the critical gate from the overall acceptance result. Exit codes: 0 accepted, 1 rejected, 2 invalid input or file error.
+A case passes when the decision matches exactly, all declared actions are allowed, and all required evidence identifiers are present. Missing or malformed outputs fail their case. Duplicate JSON keys are rejected as invalid input. Critical-case failures and unexpected case IDs always block acceptance, regardless of the pass rate. By default, acceptance also requires every case to pass. The report separates the critical gate from the overall acceptance result. Exit codes: 0 accepted, 1 rejected, 2 invalid input or file error. The tool refuses to overwrite either input file with `--output`.
 
 ## Design boundaries
 
@@ -61,7 +63,7 @@ A case passes when the decision matches exactly, all declared actions are allowe
 
 ## Contributing
 
-Bug reports, additional synthetic scenarios, and reproducible test improvements are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidance.
+Bug reports, additional synthetic scenarios, and reproducible test improvements are welcome. Please use the issue template, read [CONTRIBUTING.md](CONTRIBUTING.md), and consult [SECURITY.md](SECURITY.md) before disclosing sensitive details.
 
 ## License
 
