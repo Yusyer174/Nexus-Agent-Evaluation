@@ -49,14 +49,14 @@ A [composite GitHub Action](action.yml) is included for teams that already expor
 - uses: actions/setup-python@v5
   with:
     python-version: '3.11'
-- uses: Yusyer174/Nexus-Agent-Evaluation@main
+- uses: Yusyer174/Nexus-Agent-Evaluation@754dcf51ff4fb5b15a648d4f633b55ee5fe0a3f7
   with:
     cases: tests/agent/cases.json
     predictions: tests/agent/predictions.json
     report-path: agent-evaluation-report.json
 ```
 
-Replace the example paths with your own files; use a **reviewed full commit SHA** rather than `@main` for stable downstream workflows. The [complete example workflow](examples/github-actions/evaluate-agent.yml) also uploads the report.
+Replace the example paths with your own files. This example is pinned to a CI-tested commit; update that SHA **only after reviewing the changes**. The [complete example workflow](examples/github-actions/evaluate-agent.yml) also uploads the report.
 
 
 On Windows use `py` instead of `python` if needed.
