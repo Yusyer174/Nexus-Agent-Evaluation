@@ -1,0 +1,38 @@
+name: "NEXUS Agent Evaluation"
+description: "Evaluate declared AI-agent decisions against JSON cases; not a runtime security check."
+branding:
+  icon: "check-square"
+  color: "blue"
+inputs:
+  cases:
+    description: "Path to the JSON case definitions in the caller workspace."
+    required: true
+  predictions:
+    description: "Path to JSON predictions from an agent or synthetic fixture."
+    required: true
+  min-pass-rate:
+    description: "Minimum acceptable pass rate (0 to 1). Critical gates always apply."
+    required: false
+    default: "1.0"
+  report-path:
+    description: "Where to write the JSON evaluation report (must not be an input file)."
+    required: false
+    default: "nexus-report.json"
+runs:
+  using: "composite"
+  steps:
+    - name: Evaluate structured predictions
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        NEXUS_CASES: ${{ inputs.cases }}
+        NEXUS_PREDICTIONS: ${{ inputs.predictions }}
+        NEXUS_MIN_PASS_RATE: ${{ inputs.min-pass-rate }}
+        NEXUS_REPORT_PATH: ${{ inputs.report-path }}
+      run: |
+        python "$GITHUB_ACTION_PATH/evaluator.py" \
+          --min-pass-rate="$NEXUS_MIN_PASS_RATE" \
+          --output="$NEXUS_REPORT_PATH" \
+          -- \
+          "$NEXUS_CASES" \
+          "$NEXUS_PREDICTIONS"

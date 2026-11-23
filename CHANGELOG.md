@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased (changes merged 2026-11-23)
+## Unreleased
+
+- Escape non-ASCII characters in CLI JSON reports so valid evaluations retain exit 0 or 1 on ASCII and CP1252 stdout. Parsed Unicode values and report fields are unchanged; regression coverage includes critical failures and unexpected prediction IDs at threshold zero.
+
+- Use SPDX MIT metadata and explicit license-file inclusion with setuptools 77.0.3+, without changing license terms or the Python 3.10 minimum.
+- Include public test fixtures and documentation in source distributions.
+- Verify sdist/wheel contents, unpacked regression tests and isolated console installations across platforms and the minimum build backend.
+
+- Prevent report output from overwriting either input through a hard link, with regression tests.
+- Pass composite-action paths as literal CLI arguments, including filenames starting with `-`.
+- Exercise the actual action on Linux, Windows and macOS with caller paths containing spaces and shell characters.
+- Add persistent Copilot guidance and a scoped maintenance review with release and contributor follow-ups.
+
+- Add a standalone GitHub composite action, a smoke-test workflow, and a copyable downstream CI example.
+- Provide an independent five-minute trial with accepted and rejected synthetic predictions.
+- Provide a structured, privacy-conscious trial feedback issue template.
 
 - Protect the evaluator's input files from accidental overwrite through `--output`.
 - Expand regression coverage for output aliases, malformed cases and acceptance-gate edge cases.

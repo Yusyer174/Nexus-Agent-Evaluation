@@ -1,0 +1,103 @@
+name: Composite action smoke test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  composite-action:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: evaluator action
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Prepare caller-owned fixtures
+        shell: python
+        run: |
+          from pathlib import Path
+          import shutil
+          Path("caller files").mkdir()
+          for source, target in (
+              ("cases.json", "caller files/cases $(echo injected).json"),
+              ("predictions.json", "caller files/predictions 'quoted'.json"),
+              ("rejected-predictions.json", "caller files/rejected predictions.json"),
+              ("cases.json", "--cases.json"),
+              ("predictions.json", "--predictions.json"),
+          ):
+              shutil.copyfile(Path("evaluator action/examples") / source, target)
+      - name: Evaluate paths with spaces and shell characters
+        uses: ./evaluator action
+        with:
+          cases: caller files/cases $(echo injected).json
+          predictions: caller files/predictions 'quoted'.json
+          report-path: caller files/accepted report.json
+      - name: Evaluate filenames starting with dashes
+        uses: ./evaluator action
+        with:
+          cases: --cases.json
+          predictions: --predictions.json
+          report-path: --report.json
+      - name: Assert accepted reports
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          for path in ("caller files/accepted report.json", "--report.json"):
+              r = json.loads(Path(path).read_text(encoding="utf-8"))
+              assert r["accepted"] is True
+              assert r["total"] == r["passed"] == 3
+              assert r["critical_failures"] == []
+      - name: Check critical rejection at threshold zero
+        id: expected_rejection
+        continue-on-error: true
+        uses: ./evaluator action
+        with:
+          cases: caller files/cases $(echo injected).json
+          predictions: caller files/rejected predictions.json
+          min-pass-rate: "0"
+          report-path: caller files/rejected report.json
+      - name: Verify expected rejection and report
+        shell: python
+        env:
+          REJECTION_OUTCOME: ${{ steps.expected_rejection.outcome }}
+        run: |
+          import json
+          import os
+          from pathlib import Path
+          assert os.environ["REJECTION_OUTCOME"] == "failure"
+          r = json.loads(Path("caller files/rejected report.json").read_text(encoding="utf-8"))
+          assert r["accepted"] is False
+          assert r["gate_passed"] is False
+          assert r["minimum_pass_rate"] == 0
+          assert r["critical_failures"] == ["permissions-01"]
+      - name: Treat an option-looking input as a missing filename
+        id: invalid_input
+        continue-on-error: true
+        uses: ./evaluator action
+        with:
+          cases: --help
+          predictions: --predictions.json
+          report-path: must-not-exist.json
+      - name: Verify the missing filename failed without a report
+        shell: python
+        env:
+          INPUT_OUTCOME: ${{ steps.invalid_input.outcome }}
+        run: |
+          import os
+          from pathlib import Path
+          assert os.environ["INPUT_OUTCOME"] == "failure"
+          assert not Path("must-not-exist.json").exists()
