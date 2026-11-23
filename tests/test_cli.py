@@ -69,6 +69,22 @@ class CLITests(unittest.TestCase):
         self.write_predictions()
         self.assertEqual(self.invoke("--min-pass-rate", "nan").returncode, 2)
 
+    def test_refuses_to_overwrite_prediction_input(self):
+        self.write_predictions()
+        original = self.input.read_bytes()
+        result = self.invoke("--output", str(self.input))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("must not overwrite", result.stderr)
+        self.assertEqual(self.input.read_bytes(), original)
+
+    def test_refuses_to_overwrite_input_via_relative_alias(self):
+        self.write_predictions()
+        original = self.input.read_bytes()
+        alias = self.directory / "." / "predictions.json"
+        result = self.invoke("--output", str(alias))
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(self.input.read_bytes(), original)
+
     def test_invalid_python_prediction_key(self):
         cases = json.loads((ROOT / "examples/cases.json").read_text(encoding="utf-8"))
         with self.assertRaises(ValueError):
