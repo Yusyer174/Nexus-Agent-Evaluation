@@ -1,0 +1,58 @@
+name: Distribution checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.10"
+            minimum-backend: true
+          - os: ubuntu-latest
+            python: "3.13"
+            minimum-backend: false
+          - os: windows-latest
+            python: "3.13"
+            minimum-backend: false
+          - os: macos-latest
+            python: "3.13"
+            minimum-backend: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install build frontend
+        run: python -m pip install build
+      - name: Install minimum supported build backend
+        if: matrix.minimum-backend
+        run: python -m pip install setuptools==77.0.3 wheel
+      - name: Build with the minimum backend
+        if: matrix.minimum-backend
+        run: python -m build --no-isolation
+      - name: Build with isolated backend dependencies
+        if: ${{ !matrix.minimum-backend }}
+        run: python -m build
+      - name: Verify artifacts and clean installations
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+          import sys
+          sdist, = Path("dist").glob("*.tar.gz")
+          wheel, = Path("dist").glob("*.whl")
+          subprocess.run([sys.executable, "tests/check_distribution.py",
+                          "--sdist", str(sdist), "--wheel", str(wheel)], check=True)
