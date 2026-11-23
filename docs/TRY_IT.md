@@ -41,6 +41,6 @@ To call the evaluator as a GitHub Action, see [the copyable workflow](../example
 - Would a declaration-only, deterministic gate complement your agent test setup? Where would it be inadequate?
 - What one small change would make this tool more useful? Please avoid requesting claims of runtime safety that the tool cannot support.
 
-Use [the independent trial feedback form](../issues/new?template=trial_feedback.yml) or [open a regular issue](../issues). You can also propose a focused PR after reading [CONTRIBUTING.md](../CONTRIBUTING.md).
+Use [the independent trial feedback form](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/new?template=trial_feedback.yml) or [open a regular issue](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues). You can also propose a focused PR after reading [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 No credentials, proprietary agent traces, hidden test sets, personal information or financial data should be shared. Negative feedback is valuable; we will not count issue responses as adoption, installations or endorsements.
