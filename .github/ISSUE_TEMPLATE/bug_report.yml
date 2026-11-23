@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a reproducible issue with the standalone evaluator.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: "Use synthetic examples only. Do not post sensitive security details, credentials or private agent data."
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Explain observed behavior and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproducible example
+      description: Provide commands and synthetic JSON inputs where possible.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "v0.2.0 or commit SHA"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python and operating system
+      placeholder: "Python 3.12, Windows 11"
+    validations:
+      required: true
