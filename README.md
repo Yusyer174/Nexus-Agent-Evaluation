@@ -7,6 +7,17 @@ A small, dependency-free Python tool for evaluating structured AI-agent decision
 
 **Status:** Early standalone prototype (v0.2.0). This is a new implementation, not an extraction from or verified integration with the private NEXUS codebase. No claims of adoption or production readiness are made.
 
+## Try it and give independent feedback
+
+**Five-minute, no-API-key trial:** [run a passing and deliberately failing agent-evaluation example](docs/TRY_IT.md). Feedback from developers who actually try the prototype is welcome, including confusing errors, integration gaps, or reasons it would *not* be useful.
+
+- [Start the trial](docs/TRY_IT.md)
+- [Submit test feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/new?template=trial_feedback.yml)
+- [Browse the JSON integration contract](docs/INTEGRATION.md)
+
+The project has no claimed external users or validated deployments.
+
+
 ## Quick start
 
 Requirements: Python 3.10 or newer. No API keys, network access, or third-party packages required.
@@ -28,6 +39,25 @@ nexus-evaluate examples/cases.json examples/predictions.json
 This installs the local package; it is not published to PyPI. There are no runtime dependencies (installation may download build tools).
 
 See [Integration contract](docs/INTEGRATION.md) for the exact JSON schema, failure gates, exit codes and example integrations.
+
+### GitHub Actions integration (experimental)
+
+A [composite GitHub Action](action.yml) is included for teams that already export structured agent predictions. It checks files from the caller's workspace and fails CI if the declared outputs fail the configured gates. It does **not** run the agent or enforce actual permissions.
+
+```yaml
+- uses: actions/checkout@v4
+- uses: actions/setup-python@v5
+  with:
+    python-version: '3.11'
+- uses: Yusyer174/Nexus-Agent-Evaluation@main
+  with:
+    cases: tests/agent/cases.json
+    predictions: tests/agent/predictions.json
+    report-path: agent-evaluation-report.json
+```
+
+Replace the example paths with your own files; use a **reviewed full commit SHA** rather than `@main` for stable downstream workflows. The [complete example workflow](examples/github-actions/evaluate-agent.yml) also uploads the report.
+
 
 On Windows use `py` instead of `python` if needed.
 
