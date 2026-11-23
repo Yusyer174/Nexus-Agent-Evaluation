@@ -57,6 +57,12 @@ nexus-evaluate --output=report.json -- --cases.json --predictions.json
 
 The composite action handles this automatically, resolves relative paths from the caller workspace, and requires Python 3.10+ and Bash on the runner. Input strings are passed literally, including spaces and shell characters. A valid rejected evaluation writes a report and exits 1; invalid input exits 2 and may produce no report. Use a fresh report path or remove an old report before a run so that an error cannot leave a stale artifact mistaken for a new result.
 
+## Report encoding
+
+The CLI prints JSON to stdout and saves the same report with `--output` using UTF-8. Non-ASCII characters use standard JSON escapes in both outputs, so Unicode identifiers and diagnostics also work with ASCII or legacy Windows stdout encodings such as CP1252. For example, the identifier `café` is serialized as `"caf\u00e9"`; a JSON parser restores the original string. Characters outside the Basic Multilingual Plane use JSON surrogate-pair escapes.
+
+Compare parsed JSON values rather than the spelling of escaped strings. This serialization change preserves report keys, Unicode values, evaluation rules and exit codes; reports containing only ASCII text retain their existing representation.
+
 ## How to evaluate an actual model responsibly
 
 Create cases *independently* from the system being evaluated; separate development and held-out cases. Use realistic but non-sensitive examples, record model version and prompt setup, and review errors as well as aggregate scores. A green report alone cannot demonstrate generalization, evidence correctness, sandboxing, policy enforcement, or runtime safety.

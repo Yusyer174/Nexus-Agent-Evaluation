@@ -26,6 +26,8 @@ Expected: exit code **1** and `gate_passed: false` because a critical case decla
 
 Immediately after a command, check its exit code with `echo $?` in Bash, `$LASTEXITCODE` in PowerShell, or `echo %ERRORLEVEL%` in Windows Command Prompt. Exit **2** means an input, argument or file error; inspect stderr before interpreting a report.
 
+Unicode case IDs are supported. Reports show non-ASCII characters as JSON escapes (for example, `caf\u00e9`); opening the report with a JSON parser restores the original text. This keeps reports printable on legacy Windows terminals and redirected stdout. See [report encoding](INTEGRATION.md#report-encoding).
+
 ## Option B — Evaluate declarations from your own system
 
 Write the two JSON files described in [INTEGRATION.md](INTEGRATION.md), or adapt the synthetic examples. Your agent only needs to export `decision`, `actions` and `evidence` fields; **NEXUS does not run the agent**.

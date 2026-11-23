@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -36,6 +37,55 @@ class CLITests(unittest.TestCase):
         report = json.loads(result.stdout)
         self.assertTrue(report["accepted"])
         self.assertEqual(report, json.loads(out.read_text(encoding="utf-8")))
+
+    def test_unicode_reports_preserve_values_and_exit_status(self):
+        case_id = "caso-caf\u00e9-\u6f22-\U0001f9ea"
+        forbidden = "prohibida-\u6f22-\U0001f4a5"
+        evidence_id = "evidencia-\u00f1-\U0001f50e"
+        unexpected_id = "extra-\u65e5-\U0001f916"
+        cases = self.directory / "cases.json"
+        cases.write_text(json.dumps([{
+            "id": case_id, "expected_decision": "permitir-\u2705",
+            "allowed_actions": [], "required_evidence": [evidence_id], "critical": True,
+        }], ensure_ascii=False), encoding="utf-8")
+        for encoding, handler in (("ascii", "strict"), ("cp1252", "strict"),
+                                  ("cp1252", "replace"), ("utf-8", "strict")):
+            for outcome in ("accepted", "critical_failure", "unexpected_prediction"):
+                with self.subTest(encoding=encoding, handler=handler, outcome=outcome):
+                    predictions = {case_id: {
+                        "decision": "permitir-\u2705", "actions": [], "evidence": [evidence_id],
+                    }}
+                    errors = []
+                    if outcome == "critical_failure":
+                        predictions[case_id]["actions"] = [forbidden]
+                        predictions[case_id]["evidence"] = []
+                        errors = ["unauthorized actions: " + forbidden,
+                                  "missing evidence: " + evidence_id]
+                    elif outcome == "unexpected_prediction":
+                        predictions[unexpected_id] = {}
+                    self.input.write_text(json.dumps(predictions, ensure_ascii=False), encoding="utf-8")
+                    output = self.directory / "unicode-report.json"
+                    environment = os.environ.copy()
+                    environment["PYTHONIOENCODING"] = encoding + ":" + handler
+                    result = subprocess.run(
+                        [sys.executable, str(ROOT / "evaluator.py"), str(cases), str(self.input),
+                         "--min-pass-rate=0", "--output", str(output)],
+                        env=environment, capture_output=True, timeout=10,
+                    )
+                    accepted = outcome == "accepted"
+                    self.assertEqual(result.returncode, 0 if accepted else 1, result.stderr)
+                    self.assertEqual(result.stderr, b"")
+                    report = json.loads(result.stdout.decode(encoding))
+                    self.assertEqual(report, json.loads(output.read_text(encoding="utf-8")))
+                    self.assertEqual(report, {
+                        "total": 1, "passed": 0 if errors else 1,
+                        "pass_rate": 0.0 if errors else 1.0,
+                        "critical_failures": [case_id] if errors else [],
+                        "unexpected_predictions": [unexpected_id] if outcome == "unexpected_prediction" else [],
+                        "gate_passed": accepted,
+                        "results": [{"id": case_id, "critical": True, "passed": not errors, "errors": errors}],
+                        "minimum_pass_rate": 0.0, "accepted": accepted,
+                    })
 
     def test_noncritical_failure_threshold(self):
         self.predictions["research-01"]["decision"] = "wrong"

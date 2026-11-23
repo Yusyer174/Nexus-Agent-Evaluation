@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Escape non-ASCII characters in CLI JSON reports so valid evaluations retain exit 0 or 1 on ASCII and CP1252 stdout. Parsed Unicode values and report fields are unchanged; regression coverage includes critical failures and unexpected prediction IDs at threshold zero.
+
 - Use SPDX MIT metadata and explicit license-file inclusion with setuptools 77.0.3+, without changing license terms or the Python 3.10 minimum.
 - Include public test fixtures and documentation in source distributions.
 - Verify sdist/wheel contents, unpacked regression tests and isolated console installations across platforms and the minimum build backend.

@@ -111,7 +111,8 @@ def main() -> int:
         report = evaluate(_load_json(args.cases), _load_json(args.predictions))
         report["minimum_pass_rate"] = args.min_pass_rate
         report["accepted"] = report["gate_passed"] and report["pass_rate"] >= args.min_pass_rate
-        output = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
+        # JSON escapes preserve Unicode values on legacy stdout encodings, too.
+        output = json.dumps(report, indent=2, ensure_ascii=True) + "\n"
         if args.output:
             args.output.write_text(output, encoding="utf-8")
         print(output, end="")
