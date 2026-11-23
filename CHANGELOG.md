@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (changes merged 2026-11-23)
+
+- Protect the evaluator's input files from accidental overwrite through `--output`.
+- Expand regression coverage for output aliases, malformed cases and acceptance-gate edge cases.
+- Document the JSON integration contract, security disclosure and contributor workflow.
+- Add a structured bug report form and pull request checklist.
+
 ## v0.2.0
 
 - Add local Python packaging and the `nexus-evaluate` command-line entry point.
