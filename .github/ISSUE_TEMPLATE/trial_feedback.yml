@@ -1,0 +1,48 @@
+name: Independent trial feedback
+description: Share a genuine experience testing the standalone Python evaluator.
+title: "trial feedback: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing. This is an educational prototype that checks *declared outputs*, not actual agent behavior or permissions. Share synthetic examples only; do not include secrets or private agent traces.
+  - type: dropdown
+    id: tested
+    attributes:
+      label: What did you actually try?
+      options:
+        - Synthetic accepted example
+        - Synthetic rejected example
+        - Own synthetic cases
+        - Integrated with a local project
+        - Read documentation only (not tested)
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened?
+      description: Share actual commands, outcomes, or errors. If you did not run anything, say so.
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: Confusing steps or missing functionality
+      description: What could we improve? Constructive critical feedback is welcome.
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Environment (if tested)
+      placeholder: "Python 3.12, Linux; no model API"
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Data safety
+      options:
+        - label: I have not included secrets, proprietary data, or private agent traces.
+          required: true
