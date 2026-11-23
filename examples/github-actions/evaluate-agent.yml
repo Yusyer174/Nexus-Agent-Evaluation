@@ -1,0 +1,34 @@
+# Copy to the calling project's .github/workflows/evaluate-agent.yml.
+# Prototype example: for real use, pin @main to a reviewed full commit SHA.
+name: Evaluate agent declarations
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # The caller repository must provide its own cases.json and predictions.json.
+      # For example, have a previous step generate declared agent outputs.
+      - name: Check reported agent decisions
+        uses: Yusyer174/Nexus-Agent-Evaluation@main
+        with:
+          cases: tests/agent/cases.json
+          predictions: tests/agent/predictions.json
+          min-pass-rate: "1.0"
+          report-path: agent-evaluation-report.json
+      - name: Upload report when available
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-evaluation-report
+          path: agent-evaluation-report.json
+          if-no-files-found: ignore
