@@ -13,6 +13,20 @@ python evaluator.py examples/cases.json examples/predictions.json
 
 No external packages or API keys are required. Add regression tests for behavior changes. Keep examples synthetic and distinguish example results from real model evaluations.
 
+## Packaging checks
+
+For packaging changes, install the build frontend in your development environment and build both artifacts:
+
+```sh
+python -m pip install build
+python -m build
+python tests/check_distribution.py --sdist dist/nexus_agent_evaluation-0.2.0.tar.gz --wheel dist/nexus_agent_evaluation-0.2.0-py3-none-any.whl
+```
+
+Use the actual filenames if the version changes. The build frontend and setuptools 77.0.3+ are build tools; the evaluator still has no runtime dependencies. Building may download tooling. The artifact checker runs the unpacked source tests, checks metadata/license/fixtures, creates temporary virtual environments, installs both artifacts and runs the installed console command from a separate caller directory. Installing the source artifact may download its build backend. It never publishes anything.
+
+The distribution workflow tests Python 3.10 with the minimum backend and Python 3.13 on Linux, Windows and macOS. The regular unit workflow continues testing Python 3.10–3.13. Keep the MIT license text, runtime requirement and critical gates unchanged when maintaining packaging.
+
 ## Reporting issues
 
 Describe the expected and actual behavior, the Python version, and a minimal reproducible example. Never include secrets, private data, or proprietary agent outputs. For security-sensitive reports, do not publish exploit details or credentials in public issues; contact the maintainer privately if a suitable channel is available.

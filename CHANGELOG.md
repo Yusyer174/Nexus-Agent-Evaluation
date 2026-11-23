@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Use SPDX MIT metadata and explicit license-file inclusion with setuptools 77.0.3+, without changing license terms or the Python 3.10 minimum.
+- Include public test fixtures and documentation in source distributions.
+- Verify sdist/wheel contents, unpacked regression tests and isolated console installations across platforms and the minimum build backend.
+
 - Prevent report output from overwriting either input through a hard link, with regression tests.
 - Pass composite-action paths as literal CLI arguments, including filenames starting with `-`.
 - Exercise the actual action on Linux, Windows and macOS with caller paths containing spaces and shell characters.

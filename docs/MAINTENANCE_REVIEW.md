@@ -2,6 +2,8 @@
 
 Reviewed 2026-11-23 against [main at 62a5c10](https://github.com/Yusyer174/Nexus-Agent-Evaluation/commit/62a5c10f02ef75148baf8c0ae6000f9f40032656). The downloaded archive matched all 26 tracked files. The original 26 unit tests passed on Windows with Python 3.13.18. The highest-value work is protecting input files and making the composite action evaluate literal caller-supplied paths.
 
+Follow-up on 2026-11-23: [PR 12](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/12) was reviewed and squash-merged as [8907a72](https://github.com/Yusyer174/Nexus-Agent-Evaluation/commit/8907a72a963163a82a49f7eb4b1ff47c8ce1390b), after all ten hosted jobs passed. The sections below retain the original audit evidence. The final section records the subsequent packaging work and refreshed collaboration research.
+
 ## Prioritized audit
 
 | Problem | Current evidence | Severity | Developer impact | Improvement | Verification |
@@ -100,3 +102,23 @@ The evaluator currently has no repository topics and a broad description, “Ope
 - Keep the existing trial and contributor links current after releases. Avoid adding adoption claims until independently supported.
 
 These are separate owner tasks; no profile repository, account setting, topics, visibility or pins were changed.
+
+## Packaging follow-up
+
+The old sdist reproduced the fixture defect: all 28 tests errored after extraction because the examples were absent. Artifact regressions also failed on missing documentation and the wheel's absent `License-Expression`. The follow-up uses an explicit [source manifest](../MANIFEST.in), SPDX MIT metadata and setuptools 77.0.3+. This follows the [PyPA metadata guidance](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) and [setuptools source-file guidance](https://setuptools.pypa.io/en/latest/userguide/miscellaneous.html); the MIT license text and Python 3.10 requirement remain unchanged.
+
+The [distribution checker](../tests/check_distribution.py) checks real artifacts, runs the unpacked source suite, and installs both sdist and wheel into fresh virtual environments before invoking the console command from a separate directory. Its [CI workflow](../.github/workflows/package.yml) covers the minimum backend on Python 3.10, and isolated builds on Python 3.13 across Linux, Windows and macOS. These checks replace the baseline's missing installed-artifact coverage. They do not publish packages or releases.
+
+Locally, the checkout's 28 tests and the three artifact checks for contents, metadata and unpacked tests pass for both the current backend and setuptools 77.0.3. Both builds succeed without the former license-table deprecation. The full local installation check fails during virtual-environment preparation; a separate import confirms Windows Application Control blocks `pyexpat`. This environment limitation is not suppressed or skipped in the checker. Review the hosted installation results before merging the follow-up. The documented version remains 0.2.0 until a separately approved release decision.
+
+## Collaboration follow-up
+
+The existing public feedback invitation [issue 8](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/8) and beginner task [issue 9](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) remain open with zero comments. Searches for `involves:Yusyer174` in the public OpenAgent Eval, Strands Evals and Promptfoo repositories returned no matching issues or PRs. This scoped search does not establish whether messages were sent through other channels. No new invitation, reply, independent test, merged external contribution or verified downstream integration is claimed here.
+
+Two technical proposals are ready for human review, without posting them:
+
+1. **OpenAgent Eval [issue 344](https://github.com/OpenAgentHQ/openagent-eval/issues/344), blocking lint checks.** The issue remains open without an assignee or comments. Prerequisite work is already in open PRs [372](https://github.com/OpenAgentHQ/openagent-eval/pull/372), [373](https://github.com/OpenAgentHQ/openagent-eval/pull/373), [374](https://github.com/OpenAgentHQ/openagent-eval/pull/374), [382](https://github.com/OpenAgentHQ/openagent-eval/pull/382) and [383](https://github.com/OpenAgentHQ/openagent-eval/pull/383); do not duplicate it. Draft proposal: “After the prerequisite fixes merge, I can prepare a focused change removing both failure-suppression mechanisms from the Ruff and MyPy steps. Validation would include a green clean checkout plus disposable changes containing one lint violation and one type error, each causing CI to fail. I would leave integration-test policy and evaluation behavior outside this PR.” Estimate: half a day once prerequisites are ready. Maintainer coordination and a new check for competing PRs are still needed.
+
+2. **Promptfoo [issue 12525](https://github.com/promptfoo/promptfoo/issues/12525), corrupted CSV fixtures.** The report requests an explicit error or warning for invalid UTF-8. The reporter has already offered an implementation; the issue has no comments or assignee. Current [CSV loading code](https://github.com/promptfoo/promptfoo/blob/a7eee9df7f4da0b4a92b3ea147f12832a866f138/src/util/testCaseReader.ts#L344) still reads UTF-8 directly. Draft proposal: “I can independently review the proposed CSV decoding fix with byte-level fixtures for UTF-8, UTF-8 BOM, cp1252, cp949 and truncated multibyte sequences. I would check that valid input is preserved and invalid input is reported before an echo-provider evaluation can pass. This can be a focused regression-test review of your PR, without duplicating your implementation or adding another evaluation dependency.” Estimate: one to two hours after a candidate PR exists. The reported runtime bug has not been independently executed in this session, and no maintainer acceptance is assumed.
+
+The newly checked Promptfoo [issue 12513](https://github.com/promptfoo/promptfoo/issues/12513) is already claimed in its comments; avoid a competing implementation. The earlier Strands [issue 222](https://github.com/strands-agents/evals/issues/222) remains a possible larger native-evaluator proposal, subject to maintainer confirmation. None of these opportunities justifies promotional posts or presenting NEXUS as runtime enforcement.

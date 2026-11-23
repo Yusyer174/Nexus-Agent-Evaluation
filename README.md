@@ -91,6 +91,8 @@ python -m pip install .
 nexus-evaluate examples/cases.json examples/predictions.json
 ```
 
+Run these example paths from the source directory. Source archives include the synthetic fixtures, tests and public documentation; wheels install the evaluator and CLI. For other working directories, supply paths to your own JSON files. The installed interpreter can also run the same CLI with `python -m evaluator`. See [packaging checks](CONTRIBUTING.md#packaging-checks) for reproducible artifact and installation validation.
+
 The project is **not published on PyPI**. The package metadata currently identifies version `0.2.0`; see [CHANGELOG.md](CHANGELOG.md) for subsequent changes on `main`.
 
 See the [maintenance review](docs/MAINTENANCE_REVIEW.md) for the compatibility and release plan, prioritized follow-ups and evidence-based contribution opportunities.
