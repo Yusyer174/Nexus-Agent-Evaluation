@@ -104,7 +104,9 @@ def main() -> int:
     try:
         if args.output is not None:
             output_path = args.output.resolve()
-            if output_path in (args.cases.resolve(), args.predictions.resolve()):
+            inputs = (args.cases, args.predictions)
+            if any(output_path == path.resolve() or
+                   (output_path.exists() and output_path.samefile(path)) for path in inputs):
                 raise ValueError("--output must not overwrite either input file")
         report = evaluate(_load_json(args.cases), _load_json(args.predictions))
         report["minimum_pass_rate"] = args.min_pass_rate

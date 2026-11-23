@@ -85,6 +85,36 @@ class CLITests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertEqual(self.input.read_bytes(), original)
 
+    def test_refuses_to_overwrite_either_input_via_hardlink(self):
+        self.write_predictions()
+        cases = self.directory / "cases.json"
+        cases.write_bytes((ROOT / "examples/cases.json").read_bytes())
+        for source in (cases, self.input):
+            with self.subTest(source=source.name):
+                cases.write_bytes((ROOT / "examples/cases.json").read_bytes())
+                self.write_predictions()
+                alias = self.directory / (source.stem + "-report.json")
+                original = source.read_bytes()
+                alias.hardlink_to(source)
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / "evaluator.py"), str(cases),
+                     str(self.input), "--output", str(alias)],
+                    capture_output=True, text=True, timeout=10
+                )
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn("must not overwrite", result.stderr)
+                self.assertEqual(result.stdout, "")
+                self.assertEqual(source.read_bytes(), original)
+                self.assertEqual(alias.read_bytes(), original)
+
+    def test_output_file_can_be_replaced_when_it_is_not_an_input(self):
+        self.write_predictions()
+        out = self.directory / "existing report.json"
+        out.write_text("old report", encoding="utf-8")
+        result = self.invoke("--output", str(out))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), json.loads(out.read_text(encoding="utf-8")))
+
     def test_invalid_python_prediction_key(self):
         cases = json.loads((ROOT / "examples/cases.json").read_text(encoding="utf-8"))
         with self.assertRaises(ValueError):
