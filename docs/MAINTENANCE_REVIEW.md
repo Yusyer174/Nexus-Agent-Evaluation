@@ -25,7 +25,7 @@ The implementation scope is the two demonstrated defects, their integration cove
 - The fresh Windows console launcher was blocked by Application Control (WinError 4551). The installed module is checked separately outside the checkout; this does not establish that the blocked launcher works on this machine.
 - Internal documentation targets and local Markdown anchors pass the link check. The complete diff and added files were reviewed; a credential-pattern scan is an additional check, not proof that arbitrary content is safe to publish.
 
-PR workflow results should be reviewed before merging. Passing checks concern declared-output evaluation, not agent runtime safety.
+Hosted checks for the implementation at [bda7355](https://github.com/Yusyer174/Nexus-Agent-Evaluation/commit/bda7355b024a22aa07a75e5bf8e911f6a870ebdf) all passed: [Python 3.10–3.13 tests and installed command](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45180266452), [three-platform composite action](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45180266621), and [three-platform CLI](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45180266625). Review the latest PR checks before merging. Passing checks concern declared-output evaluation, not agent runtime safety.
 
 ## Validation and integration findings
 
@@ -100,4 +100,3 @@ The evaluator currently has no repository topics and a broad description, “Ope
 - Keep the existing trial and contributor links current after releases. Avoid adding adoption claims until independently supported.
 
 These are separate owner tasks; no profile repository, account setting, topics, visibility or pins were changed.
-
