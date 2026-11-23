@@ -23,6 +23,7 @@ runs:
   steps:
     - name: Evaluate structured predictions
       shell: bash
+      working-directory: ${{ github.workspace }}
       env:
         NEXUS_CASES: ${{ inputs.cases }}
         NEXUS_PREDICTIONS: ${{ inputs.predictions }}
@@ -30,7 +31,8 @@ runs:
         NEXUS_REPORT_PATH: ${{ inputs.report-path }}
       run: |
         python "$GITHUB_ACTION_PATH/evaluator.py" \
+          --min-pass-rate="$NEXUS_MIN_PASS_RATE" \
+          --output="$NEXUS_REPORT_PATH" \
+          -- \
           "$NEXUS_CASES" \
-          "$NEXUS_PREDICTIONS" \
-          --min-pass-rate "$NEXUS_MIN_PASS_RATE" \
-          --output "$NEXUS_REPORT_PATH"
+          "$NEXUS_PREDICTIONS"
