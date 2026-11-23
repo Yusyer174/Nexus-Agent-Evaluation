@@ -102,6 +102,10 @@ def main() -> int:
     if not 0 <= args.min_pass_rate <= 1:
         parser.error("--min-pass-rate must be in [0, 1]")
     try:
+        if args.output is not None:
+            output_path = args.output.resolve()
+            if output_path in (args.cases.resolve(), args.predictions.resolve()):
+                raise ValueError("--output must not overwrite either input file")
         report = evaluate(_load_json(args.cases), _load_json(args.predictions))
         report["minimum_pass_rate"] = args.min_pass_rate
         report["accepted"] = report["gate_passed"] and report["pass_rate"] >= args.min_pass_rate
