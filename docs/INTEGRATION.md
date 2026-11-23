@@ -47,7 +47,15 @@ Run: `nexus-evaluate cases.json predictions.json --output report.json`.
 - The overall acceptance requires both the critical gate to pass and `pass_rate >= min_pass_rate` (default 1.0).
 - `--min-pass-rate` is a fraction from 0 to 1; relaxing it **never** bypasses the critical gate.
 - Exit status: **0** accepted; **1** valid evaluation rejected; **2** invalid input or file error.
-- `--output` refuses to overwrite either input file, including aliases that resolve to the same path.
+- `--output` refuses to overwrite either input file, including relative aliases, symbolic links and hard links. Existing unrelated report files can be replaced. This prevents accidental collisions; it is not a guarantee against concurrent filesystem changes.
+
+For filenames beginning with `-`, put options before a `--` separator:
+
+```sh
+nexus-evaluate --output=report.json -- --cases.json --predictions.json
+```
+
+The composite action handles this automatically, resolves relative paths from the caller workspace, and requires Python 3.10+ and Bash on the runner. Input strings are passed literally, including spaces and shell characters. A valid rejected evaluation writes a report and exits 1; invalid input exits 2 and may produce no report. Use a fresh report path or remove an old report before a run so that an error cannot leave a stale artifact mistaken for a new result.
 
 ## How to evaluate an actual model responsibly
 

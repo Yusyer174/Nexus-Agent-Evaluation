@@ -6,6 +6,8 @@
 
 With Python 3.10+:
 
+First check `python --version`. On macOS/Linux, use `python3` if `python` is unavailable; on Windows, use `py -3` if installed through the Python launcher. Substitute that command below. A Microsoft Store “Python was not found” message means Python still needs to be installed.
+
 ```bash
 git clone https://github.com/Yusyer174/Nexus-Agent-Evaluation.git
 cd Nexus-Agent-Evaluation
@@ -21,6 +23,8 @@ python evaluator.py examples/cases.json examples/rejected-predictions.json
 ```
 
 Expected: exit code **1** and `gate_passed: false` because a critical case declares an unauthorized action. The expected rejection is intentional; it does **not** require changing real agent permissions.
+
+Immediately after a command, check its exit code with `echo $?` in Bash, `$LASTEXITCODE` in PowerShell, or `echo %ERRORLEVEL%` in Windows Command Prompt. Exit **2** means an input, argument or file error; inspect stderr before interpreting a report.
 
 ## Option B — Evaluate declarations from your own system
 

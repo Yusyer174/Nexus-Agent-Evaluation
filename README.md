@@ -93,6 +93,8 @@ nexus-evaluate examples/cases.json examples/predictions.json
 
 The project is **not published on PyPI**. The package metadata currently identifies version `0.2.0`; see [CHANGELOG.md](CHANGELOG.md) for subsequent changes on `main`.
 
+See the [maintenance review](docs/MAINTENANCE_REVIEW.md) for the compatibility and release plan, prioritized follow-ups and evidence-based contribution opportunities.
+
 ## When *not* to use it
 
 This is not a substitute for execution traces, sandbox enforcement, permission checks, review independence, statistical model evaluation, or the validation of evidence integrity. An agent can report an allowed action without actually behaving correctly.

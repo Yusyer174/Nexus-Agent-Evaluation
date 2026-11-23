@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased (changes merged 2026-11-23)
+## Unreleased
+
+- Prevent report output from overwriting either input through a hard link, with regression tests.
+- Pass composite-action paths as literal CLI arguments, including filenames starting with `-`.
+- Exercise the actual action on Linux, Windows and macOS with caller paths containing spaces and shell characters.
+- Add persistent Copilot guidance and a scoped maintenance review with release and contributor follow-ups.
 
 - Add a standalone GitHub composite action, a smoke-test workflow, and a copyable downstream CI example.
 - Provide an independent five-minute trial with accepted and rejected synthetic predictions.
