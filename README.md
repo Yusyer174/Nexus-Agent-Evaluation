@@ -1,48 +1,74 @@
 # NEXUS Agent Evaluation
 
-[![Tests](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/tests.yml/badge.svg)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/tests.yml)
+[![Python tests](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/tests.yml/badge.svg)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/tests.yml)
+[![GitHub Action smoke test](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/action-smoke.yml/badge.svg)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/workflows/action-smoke.yml)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+**Test structured AI-agent decisions with deterministic, dependency-free Python.** NEXUS Agent Evaluation compares *reported* decisions, actions and evidence IDs against explicit test cases. It is useful as an offline regression check in development and CI.
 
-A small, dependency-free Python tool for evaluating structured AI-agent decisions against explicit test cases. Inspired by the NEXUS project's emphasis on auditable decisions, permission boundaries, and independent validation.
+No model, API key, service or runtime dependencies are required. Python **3.10+**.
 
-**Status:** Early standalone prototype (v0.2.0). This is a new implementation, not an extraction from or verified integration with the private NEXUS codebase. No claims of adoption or production readiness are made.
+**In one minute:** [Try a passing and deliberately failing case](docs/TRY_IT.md) · [Use the GitHub Action](#github-actions-integration) · [Give independent feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/8) · [Contribute](CONTRIBUTING.md)
 
-## Try it and give independent feedback
+> **Scope:** Early, standalone educational prototype. This does **not** execute agents, enforce permissions, authenticate evidence, or establish real-world safety. It is not a verified integration with the separate private NEXUS research project. No external adoption is claimed.
 
-**Five-minute, no-API-key trial:** [run a passing and deliberately failing agent-evaluation example](docs/TRY_IT.md). Feedback from developers who actually try the prototype is welcome, including confusing errors, integration gaps, or reasons it would *not* be useful.
+## See the result
 
-- [Start the trial](docs/TRY_IT.md)
-- [Submit test feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/new?template=trial_feedback.yml)
-- [Browse the JSON integration contract](docs/INTEGRATION.md)
-
-The project has no claimed external users or validated deployments.
-
-
-## Quick start
-
-Requirements: Python 3.10 or newer. No API keys, network access, or third-party packages required.
+Clone the repository and run the included synthetic cases:
 
 ```bash
-python evaluator.py examples/cases.json examples/predictions.json
-python -m unittest discover -s tests -v
+git clone https://github.com/Yusyer174/Nexus-Agent-Evaluation.git
+cd Nexus-Agent-Evaluation
+python evaluator.py examples/cases.json examples/predictions.json --output report.json
 ```
 
-### Install locally
+The command exits **0** and generates a JSON report containing these fields:
 
-From a clone of this repository, run:
+```json
+{
+  "total": 3,
+  "passed": 3,
+  "pass_rate": 1.0,
+  "critical_failures": [],
+  "unexpected_predictions": [],
+  "gate_passed": true,
+  "minimum_pass_rate": 1.0,
+  "accepted": true
+}
+```
+
+*Excerpt only: the full report also contains per-case results.*
+
+Now test a synthetic **critical failure**:
 
 ```bash
-python -m pip install .
-nexus-evaluate examples/cases.json examples/predictions.json
+python evaluator.py examples/cases.json examples/rejected-predictions.json
 ```
 
-This installs the local package; it is not published to PyPI. There are no runtime dependencies (installation may download build tools).
+This intentionally exits **1**, reports `gate_passed: false`, and identifies `permissions-01` as a critical failure. That case declares an action outside the permitted set. It changes no real permissions and runs no real agent.
 
-See [Integration contract](docs/INTEGRATION.md) for the exact JSON schema, failure gates, exit codes and example integrations.
+| Situation | Result |
+| --- | --- |
+| All declared decisions and actions match | Accepted; exit **0** |
+| A noncritical case fails and the minimum pass rate is not met | Rejected; exit **1** |
+| Critical case fails, regardless of pass-rate setting | Rejected; exit **1** |
+| Unexpected prediction ID | Rejected; exit **1** |
+| Malformed input, duplicate JSON keys or invalid arguments | Error; exit **2** |
 
-### GitHub Actions integration (experimental)
+## What the evaluator actually checks
 
-A [composite GitHub Action](action.yml) is included for teams that already export structured agent predictions. It checks files from the caller's workspace and fails CI if the declared outputs fail the configured gates. It does **not** run the agent or enforce actual permissions.
+Each JSON case declares an expected decision, a set of allowed actions, optional evidence identifiers, and whether the case is critical. Predictions are keyed by case ID. The evaluator checks:
+
+- **Decision match**: exactly the expected decision.
+- **Declared action bounds**: every listed action belongs to the case's allowed set.
+- **Declared evidence IDs**: every required ID is listed; authenticity is **not** verified.
+- **Acceptance gate**: a critical failure or unexpected case ID blocks acceptance even if the overall pass rate is sufficient.
+
+The complete JSON contract, example objects, validation details and exit codes are documented in [docs/INTEGRATION.md](docs/INTEGRATION.md).
+
+## GitHub Actions integration
+
+A [composite GitHub Action](action.yml) allows an existing project to evaluate its exported JSON files as a CI step. It consumes files in the caller workspace and produces a JSON report. It does **not** run the agent itself.
 
 ```yaml
 - uses: actions/checkout@v4
@@ -56,45 +82,44 @@ A [composite GitHub Action](action.yml) is included for teams that already expor
     report-path: agent-evaluation-report.json
 ```
 
-Replace the example paths with your own files. This example is pinned to a CI-tested commit; update that SHA **only after reviewing the changes**. The [complete example workflow](examples/github-actions/evaluate-agent.yml) also uploads the report.
+Replace the example paths with your own files. The action reference above is a tested historical commit; review changes before pinning a newer commit. See the [full workflow example](examples/github-actions/evaluate-agent.yml) and the [local action smoke test](.github/workflows/action-smoke.yml).
 
-
-On Windows use `py` instead of `python` if needed.
-
-The example contains synthetic cases; all three example predictions are deliberately correct. This does not measure the performance of a real model.
-
-## Project layout
-
-- `pyproject.toml`: package metadata and CLI entry point.
-- `evaluator.py`: evaluation logic and command-line interface.
-- `examples/`: synthetic cases and example predictions.
-- `tests/`: automated regression tests.
-- `CONTRIBUTING.md`: how to propose changes and test them.
-
-## Evaluate your own agent
-
-1. Create a JSON array of cases with unique `id`, `expected_decision`, `allowed_actions`, `required_evidence` (optional), and `critical` (optional boolean).
-2. Save your agent outputs as a JSON object keyed by case ID. Each output contains `decision`, `actions` (list), and `evidence` (list).
-3. Run:
+Alternatively, install a local checkout as a CLI package:
 
 ```bash
-python evaluator.py my-cases.json my-predictions.json --output report.json --min-pass-rate 0.9
+python -m pip install .
+nexus-evaluate examples/cases.json examples/predictions.json
 ```
 
-A case passes when the decision matches exactly, all declared actions are allowed, and all required evidence identifiers are present. Missing or malformed outputs fail their case. Duplicate JSON keys are rejected as invalid input. Critical-case failures and unexpected case IDs always block acceptance, regardless of the pass rate. By default, acceptance also requires every case to pass. The report separates the critical gate from the overall acceptance result. Exit codes: 0 accepted, 1 rejected, 2 invalid input or file error. The tool refuses to overwrite either input file with `--output`.
+The project is **not published on PyPI**. The package metadata currently identifies version `0.2.0`; see [CHANGELOG.md](CHANGELOG.md) for subsequent changes on `main`.
 
-## Design boundaries
+## When *not* to use it
 
-- This tool checks structured declarations, not actual execution or permissions. It is not a security sandbox or runtime authorization layer.
-- Evidence IDs are checked for presence only, not authenticity or relevance.
-- Allowed actions are a maximum permission set, not a requirement to perform an action.
-- Use independently designed development and held-out cases for meaningful evaluation. Do not expose private held-out expectations to the agent being evaluated.
-- The sample fixtures are synthetic and should not be used to claim real-world accuracy or safety.
+This is not a substitute for execution traces, sandbox enforcement, permission checks, review independence, statistical model evaluation, or the validation of evidence integrity. An agent can report an allowed action without actually behaving correctly.
 
-## Contributing
+Use independently designed development and held-out cases for meaningful evaluation; do not give hidden expected answers to the agent under test. See [SECURITY.md](SECURITY.md).
 
-Bug reports, additional synthetic scenarios, and reproducible test improvements are welcome. Please use the issue template, read [CONTRIBUTING.md](CONTRIBUTING.md), and consult [SECURITY.md](SECURITY.md) before disclosing sensitive details.
+## Contribute or test it
 
-## License
+The most valuable feedback is **independent and reproducible**, including negative results.
 
-[MIT](LICENSE).
+- [Five-minute trial](docs/TRY_IT.md) · [Submit genuine feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/new?template=trial_feedback.yml)
+- [Open, beginner-friendly test issue](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) · [Public roadmap](docs/ROADMAP.md)
+- [Contributor guide](CONTRIBUTING.md) · [Bug reports and other issues](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues)
+
+Please use only synthetic or non-sensitive examples and never publish credentials or private agent data. Stars, forks and issue replies are not evidence of genuine usage without supporting details.
+
+## Repository layout
+
+```text
+evaluator.py                    # CLI and deterministic evaluation
+action.yml                      # Optional CI integration
+examples/                       # Passing and failing synthetic JSON
+tests/                          # Python regression tests
+docs/INTEGRATION.md             # Input/output contract
+docs/TRY_IT.md                  # Independent five-minute trial
+docs/ROADMAP.md                 # Prioritized opportunities
+.github/workflows/              # Python and composite-action CI
+```
+
+MIT-licensed source code: [LICENSE](LICENSE).
