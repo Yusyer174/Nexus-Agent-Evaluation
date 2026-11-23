@@ -1,0 +1,30 @@
+name: Composite action smoke test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  composite-action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Evaluate synthetic fixture with local composite action
+        uses: ./
+        with:
+          cases: examples/cases.json
+          predictions: examples/predictions.json
+          report-path: action-smoke-report.json
+      - name: Assert accepted report
+        run: |
+          python -c "import json; r=json.load(open('action-smoke-report.json')); assert r['accepted']; assert r['total'] == 3; assert r['critical_failures'] == []"
