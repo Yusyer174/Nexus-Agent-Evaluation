@@ -108,6 +108,21 @@ class CLITests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("duplicate JSON key", result.stderr)
 
+    def test_duplicate_json_keys_in_cases_rejected(self):
+        cases = self.directory / "cases.json"
+        cases.write_text(
+            '[{"id":"case-a","id":"case-b",'
+            '"expected_decision":"reject","allowed_actions":[]}]',
+            encoding="utf-8",
+        )
+        self.write_predictions()
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "evaluator.py"), str(cases), str(self.input)],
+            capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("duplicate JSON key", result.stderr)
+
     def test_malformed_json(self):
         self.input.write_text("{", encoding="utf-8")
         self.assertEqual(self.invoke().returncode, 2)
