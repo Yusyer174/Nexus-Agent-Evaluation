@@ -15,7 +15,7 @@ python evaluator.py examples/cases.json examples/rejected-predictions.json
 
 The first CLI example should exit 0; the second should exit 1. The lab is a fixed public synthetic library-record workflow, not a held-out model benchmark. Eight scenarios cover valid, missing, stale, conflicting, invalid and unverified records and missing/revoked review approval. The six test methods contain 22 subtests varying one declaration at a time. Expectations are explicit fixtures, not inferred by the evaluator. Two counterexamples show that identical declarations cannot establish source truth and allowed action sets are not required action sets. No real permissions, tools or external effects are involved.
 
-Local validation of the new module: Python 3.13.5, six unittest methods passed; pytest reported six passed and 22 subtests passed. The evaluator blob matched main at b735b467e59302cf6f2c67b42ebf51e5c2f59d0e. Full candidate CI and artifact builds are separate checks.
+GitHub Actions verified 43 unittest tests, including the six declaration-lab methods, on Python 3.13 at [candidate commit 35bdc88](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45657420051/job/139357735857). All six workflows succeeded on that commit, including [distribution checks](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45657419977). The evaluator blob matched main at b735b467e59302cf6f2c67b42ebf51e5c2f59d0e. Recheck CI on subsequent revisions.
 
 ## Candidate review checklist
 
