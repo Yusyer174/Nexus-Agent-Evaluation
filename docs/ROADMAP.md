@@ -7,8 +7,10 @@ NEXUS Agent Evaluation is a small educational Python evaluator for **structured 
 | Priority | Opportunity | How to verify it | Difficulty |
 | --- | --- | --- | --- |
 | High | Independent [five-minute trial and feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/8) | Reproducible commands, observed outcomes and genuine criticism | No code required |
-| Medium | Regression coverage for report ordering and duplicate evidence IDs | Synthetic fixtures; preserve existing gate semantics | Beginner |
+| Completed | Regression coverage for report ordering and duplicate evidence IDs | [PR #21](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/21) and [PR #20](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/20) | Regression coverage |
 | Medium | Clearer diagnostic messages for malformed nested predictions | Tests for each changed diagnostic; behavior unchanged | Intermediate |
+
+The [declaration lab and candidate checklist](DECLARATION_LAB.md) document additional synthetic cases and known limits.
 
 [Issue #9](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) tracks a regression test for the existing CLI exit status of 2 when the case file contains duplicate JSON object keys. [PR #16](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/16) contains the contributor’s test and its review and CI status.
 
