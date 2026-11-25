@@ -80,3 +80,4 @@ class ReportContractTests(unittest.TestCase):
         predictions["z-case"]["actions"] = ["z-action", "a-action"]
         before = copy.deepcopy((cases, predictions))
         evaluate(cases, predictions)
+        self.assertEqual((cases, predictions), before)
