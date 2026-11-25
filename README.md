@@ -99,9 +99,9 @@ python -m pip install .
 nexus-evaluate examples/cases.json examples/predictions.json
 ```
 
-Run these example paths from the source directory. Source archives include the synthetic fixtures, tests and public documentation; wheels install the evaluator and CLI. For other working directories, supply paths to your own JSON files. The installed interpreter can also run the same CLI with `python -m evaluator`. See [packaging checks](CONTRIBUTING.md#packaging-checks) for reproducible artifact and installation validation.
+Run these example paths from the source directory. Source archives include the synthetic CLI fixtures, tests and Markdown documentation; wheels install the evaluator and CLI. Use a Git checkout for the full browser lab source and build checks. For other working directories, supply paths to your own JSON files. The installed interpreter can also run the same CLI with `python -m evaluator`. See [packaging checks](CONTRIBUTING.md#packaging-checks) for reproducible artifact and installation validation.
 
-The project is **not published on PyPI**. This review branch prepares version `0.3.0rc1`, an unpublished release candidate; see [CHANGELOG.md](CHANGELOG.md) and the [candidate checklist](docs/DECLARATION_LAB.md).
+The project is **not published on PyPI**. The package metadata identifies version `0.3.0rc1`, an unpublished release candidate; see [CHANGELOG.md](CHANGELOG.md) and the [candidate checklist](docs/DECLARATION_LAB.md).
 
 See the [maintenance review](docs/MAINTENANCE_REVIEW.md) for the compatibility and release plan, prioritized follow-ups and evidence-based contribution opportunities.
 
