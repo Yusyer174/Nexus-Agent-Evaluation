@@ -67,6 +67,8 @@ class DistributionTests(unittest.TestCase):
             "examples/consumer/cases.json", "examples/consumer/predictions.json",
             "examples/consumer/rejected-predictions.json", "examples/consumer/run_demo.py",
             "tests/test_cli.py", "tests/test_evaluator.py", "tests/check_distribution.py",
+            "tests/test_report_contract.py", "tests/test_declaration_lab.py",
+            "docs/DECLARATION_LAB.md",
             "docs/INTEGRATION.md", "docs/TRY_IT.md", "docs/ROADMAP.md",
             "docs/CONSUMER_TRIAL.md",
         }
