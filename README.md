@@ -16,7 +16,7 @@ No model, API key, service or runtime dependencies are required. Python **3.10+*
 Open the [NEXUS Evaluation Lab](https://yusyer174.github.io/Nexus-Agent-Evaluation/)
 to try five synthetic scenarios, edit the JSON and export a report. Evaluation
 runs in your browser. See the [lab documentation](docs/lab/README.md) for local
-build instructions and Python parity checks.
+build instructions and Python parity checks. For additional offline synthetic scenarios and scope counterexamples, see the [declaration lab](docs/DECLARATION_LAB.md).
 
 ## See the result
 
@@ -101,7 +101,7 @@ nexus-evaluate examples/cases.json examples/predictions.json
 
 Run these example paths from the source directory. Source archives include the synthetic fixtures, tests and public documentation; wheels install the evaluator and CLI. For other working directories, supply paths to your own JSON files. The installed interpreter can also run the same CLI with `python -m evaluator`. See [packaging checks](CONTRIBUTING.md#packaging-checks) for reproducible artifact and installation validation.
 
-The project is **not published on PyPI**. The package metadata currently identifies version `0.2.0`; see [CHANGELOG.md](CHANGELOG.md) for subsequent changes on `main`.
+The project is **not published on PyPI**. This review branch prepares version `0.3.0rc1`, an unpublished release candidate; see [CHANGELOG.md](CHANGELOG.md) and the [candidate checklist](docs/DECLARATION_LAB.md).
 
 See the [maintenance review](docs/MAINTENANCE_REVIEW.md) for the compatibility and release plan, prioritized follow-ups and evidence-based contribution opportunities.
 
