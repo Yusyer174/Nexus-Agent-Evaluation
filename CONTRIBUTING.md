@@ -20,7 +20,7 @@ For packaging changes, install the build frontend in your development environmen
 ```sh
 python -m pip install build
 python -m build
-python tests/check_distribution.py --sdist dist/nexus_agent_evaluation-0.2.0.tar.gz --wheel dist/nexus_agent_evaluation-0.2.0-py3-none-any.whl
+python tests/check_distribution.py --sdist dist/nexus_agent_evaluation-0.3.0rc1.tar.gz --wheel dist/nexus_agent_evaluation-0.3.0rc1-py3-none-any.whl
 ```
 
 Use the actual filenames if the version changes. The build frontend and setuptools 77.0.3+ are build tools; the evaluator still has no runtime dependencies. Building may download tooling. The artifact checker runs the unpacked source tests, checks metadata/license/fixtures, creates temporary virtual environments, installs both artifacts and runs the installed console command from a separate caller directory. Installing the source artifact may download its build backend. It never publishes anything.
