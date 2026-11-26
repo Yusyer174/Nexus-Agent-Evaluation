@@ -1,4 +1,4 @@
-"""NEXUS Coding Benchmark V1: bounded structured-response screening, not code execution."""
+"""NEXUS Coding Benchmark V1.1: bounded structured-response screening, not code execution."""
 import argparse
 import inspect
 import json
@@ -10,9 +10,9 @@ from gpu_model_smoke import api, assess, ready, same
 
 MODELS = {
     "qwen2.5-coder:7b": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
-    "qwen2.5-coder:14b": "9ec8897f747e",
-    "qwen3.5:9b-q4_K_M": "56671c2ab938",
-    "mimo-v2.6:9b-q4_K_M": "cc58eacf0e3e",
+    "qwen2.5-coder:14b": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+    "qwen3.5:9b-q4_K_M": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "mimo-v2.6:9b-q4_K_M": "cc58eacf0e3e4a96556657fe6f29c80ca38401bf242eec83f4eee074dd02bc86",
 }
 REPORT = pathlib.Path("coding-benchmark-report.json")
 SOURCE = inspect.getsource(evaluate)
@@ -75,20 +75,54 @@ def check_gpu(model):
     return size
 
 
+def warmup(model):
+    """Load the model and verify GPU residency outside scored tasks."""
+    start = time.monotonic()
+    request = {"model": model, "prompt": "Reply OK.", "stream": False,
+               "keep_alive": "5m", "options": {"temperature": 0, "seed": 42,
+               "num_ctx": 4096, "num_predict": 8}}
+    if model.startswith(("qwen3.5:", "mimo-v2.6:")):
+        request["think"] = False
+    response = api("/api/generate", request, timeout=240)
+    if response.get("done") is not True:
+        raise ValueError("incomplete warmup")
+    return {"gpu_bytes": check_gpu(model),
+            "wall_seconds": round(time.monotonic() - start, 3),
+            "generation": {k: response[k] for k in METRICS
+                           if type(response.get(k)) is int}}
+
+
+def summarize(report):
+    items = report["tasks"]
+    report["passed_tasks"] = sum(t["passed"] for t in items)
+    report["critical_failures"] = [t["id"] for t in items
+                                   if t["critical"] and t.get("status") == "incorrect"]
+    report["incomplete_tasks"] = [t["id"] for t in items
+                                  if t.get("status") not in ("correct", "incorrect")]
+    report["complete"] = (len(items) == report["task_count"]
+                          and not report["incomplete_tasks"]
+                          and all(t.get("gpu_bytes", 0) > 0 for t in items))
+    report["qualified"] = (report["complete"] and report["passed_tasks"] >= 4
+                           and not report["critical_failures"])
+
+
 def run(model):
     started = time.monotonic()
-    report = {"schema": 1, "model": model, "tasks": [], "qualified": False,
+    report = {"schema": 2, "benchmark": "1.1", "model": model, "tasks": [], "qualified": False,
               "stage": "metadata", "ollama": "0.40.18", "task_count": len(tasks())}
     try:
         ready()
         entry = next(m for m in api("/api/tags")["models"] if m["name"].lower() == model.lower())
         digest = entry["digest"].removeprefix("sha256:")
-        if len(digest) != 64 or not digest.startswith(MODELS[model]):
+        if digest != MODELS[model]:
             raise ValueError("unexpected model digest")
         report["digest"] = digest
+        report["stage"] = "warmup"
+        report["warmup"] = warmup(model)
+        REPORT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         report["stage"] = "tasks"
         for name, critical, prompt, expected in tasks():
-            item = {"id": name, "critical": critical, "passed": False}
+            item = {"id": name, "critical": critical, "passed": False, "status": "incomplete"}
             report["tasks"].append(item)
             task_start = time.monotonic()
             try:
@@ -102,22 +136,28 @@ def run(model):
                     raise ValueError("incomplete generation")
                 item["generation"] = {k: response[k] for k in METRICS if type(response.get(k)) is int}
                 item["gpu_bytes"] = check_gpu(model)
-                item["passed"] = bool(score(name, parse(response["response"]), expected))
+                try:
+                    item["passed"] = bool(score(name, parse(response["response"]), expected))
+                except (ValueError, KeyError, TypeError):
+                    item["passed"] = False
+                item["status"] = "correct" if item["passed"] else "incorrect"
                 if not item["passed"]:
                     item["error_type"] = "incorrect_answer"
+            except TimeoutError:
+                item["error_type"] = "TimeoutError"
+                item["status"] = "timeout"
             except (ValueError, KeyError, StopIteration, OSError, TypeError) as exc:
                 item["error_type"] = type(exc).__name__
+                item["status"] = "incomplete"
             finally:
                 item["wall_seconds"] = round(time.monotonic() - task_start, 3)
                 REPORT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         report["stage"] = "completed"
-        report["passed_tasks"] = sum(t["passed"] for t in report["tasks"])
-        report["critical_failures"] = [t["id"] for t in report["tasks"] if t["critical"] and not t["passed"]]
-        report["qualified"] = (report["passed_tasks"] >= 4 and not report["critical_failures"]
-                               and all(t.get("gpu_bytes", 0) > 0 for t in report["tasks"]))
+        summarize(report)
     except (ValueError, KeyError, StopIteration, OSError, TypeError) as exc:
         report["error_type"] = type(exc).__name__
     finally:
+        summarize(report)
         report["wall_seconds"] = round(time.monotonic() - started, 3)
         REPORT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(report, sort_keys=True))
@@ -142,6 +182,30 @@ def self_test():
             pass
         else:
             raise AssertionError("malformed JSON accepted")
+    from unittest.mock import patch
+    with patch(__name__ + ".api", side_effect=[
+        {"done": True, "load_duration": 10},
+        {"models": [{"name": "qwen2.5-coder:7b", "size_vram": 100}]},
+    ]) as mocked:
+        assert warmup("qwen2.5-coder:7b")["gpu_bytes"] == 100
+        assert mocked.call_args_list[0].kwargs["timeout"] == 240
+    sample = {"task_count": 5, "tasks": [
+        {"id": name, "critical": critical, "passed": True,
+         "status": "correct", "gpu_bytes": 100}
+        for name, critical, _, _ in suite
+    ]}
+    summarize(sample)
+    assert sample["qualified"]
+    sample["tasks"][0].update(passed=False, status="timeout")
+    summarize(sample)
+    assert not sample["qualified"] and not sample["complete"]
+    assert sample["incomplete_tasks"] == ["test_design"]
+    sample["tasks"][0]["status"] = "incorrect"
+    summarize(sample)
+    assert sample["qualified"] and sample["complete"]
+    sample["tasks"][2].update(passed=False, status="incorrect")
+    summarize(sample)
+    assert not sample["qualified"] and sample["critical_failures"] == ["bug_repair"]
     print("Coding benchmark self-tests passed")
 
 
