@@ -1,0 +1,52 @@
+name: Reproducible distributions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13.18'
+      - name: Create independent build environments
+        run: |
+          python -m venv .repro-env-a
+          python -m venv .repro-env-b
+          .repro-env-a/bin/python -m pip install -r tools/requirements-build.txt
+          .repro-env-b/bin/python -m pip install -r tools/requirements-build.txt
+      - name: Use the tested commit timestamp
+        run: echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
+      - name: Build from two independent source snapshots
+        run: |
+          .repro-env-a/bin/python tools/build_reproducible.py build --output-dir dist/repro-a
+          .repro-env-b/bin/python tools/build_reproducible.py build --output-dir dist/repro-b
+      - name: Compare archive hashes and file payloads
+        run: python tools/build_reproducible.py compare dist/repro-a dist/repro-b
+      - name: Install metadata validation tool
+        run: python -m pip install twine==7.0.0
+      - name: Validate the generated canonical distributions
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+          import sys
+          sys.path.insert(0, str(Path.cwd()))
+          from tools.build_reproducible import find_distributions
+          sdist, wheel = find_distributions(Path("dist/repro-a"))
+          subprocess.run([sys.executable, "-m", "twine", "check", "--strict",
+                          str(wheel), str(sdist)], check=True)
+          subprocess.run([sys.executable, "tests/check_distribution.py",
+                          "--sdist", str(sdist), "--wheel", str(wheel)], check=True)

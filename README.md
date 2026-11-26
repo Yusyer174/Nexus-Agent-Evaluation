@@ -7,7 +7,7 @@
 
 No model, API key, service or runtime dependencies are required. Python **3.10+**.
 
-**Try it** · [Passing and deliberately failing cases](docs/TRY_IT.md) · [Use the GitHub Action](#github-actions-integration) · [Give independent feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/8) · [Contribute](CONTRIBUTING.md)
+**Try it** · [Passing and deliberately failing cases](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/TRY_IT.md) · [Use the GitHub Action](#github-actions-integration) · [Give independent feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/8) · [Contribute](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/CONTRIBUTING.md)
 
 > This early educational prototype checks declared outputs. Agent execution, permission enforcement, evidence authentication and real-world safety are outside its scope.
 
@@ -15,8 +15,8 @@ No model, API key, service or runtime dependencies are required. Python **3.10+*
 
 Open the [NEXUS Evaluation Lab](https://yusyer174.github.io/Nexus-Agent-Evaluation/)
 to try five synthetic scenarios, edit the JSON and export a report. Evaluation
-runs in your browser. See the [lab documentation](docs/lab/README.md) for local
-build instructions and Python parity checks. For additional offline synthetic scenarios and scope counterexamples, see the [declaration lab](docs/DECLARATION_LAB.md).
+runs in your browser. See the [lab documentation](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/lab/README.md) for local
+build instructions and Python parity checks. For additional offline synthetic scenarios and scope counterexamples, see the [declaration lab](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/DECLARATION_LAB.md).
 
 ## See the result
 
@@ -70,11 +70,11 @@ Each JSON case declares an expected decision, a set of allowed actions, optional
 - **Declared evidence IDs**: every required ID is listed; authenticity is **not** verified.
 - **Acceptance gate**: a critical failure or unexpected case ID blocks acceptance even if the overall pass rate is sufficient.
 
-The complete JSON contract, example objects, validation details and exit codes are documented in [docs/INTEGRATION.md](docs/INTEGRATION.md).
+The complete JSON contract, example objects, validation details and exit codes are documented in [docs/INTEGRATION.md](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/INTEGRATION.md).
 
 ## GitHub Actions integration
 
-A [composite GitHub Action](action.yml) allows an existing project to evaluate its exported JSON files as a CI step. It consumes files in the caller workspace and produces a JSON report. It does **not** run the agent itself.
+A [composite GitHub Action](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/action.yml) allows an existing project to evaluate its exported JSON files as a CI step. It consumes files in the caller workspace and produces a JSON report. It does **not** run the agent itself.
 
 ```yaml
 - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -88,7 +88,7 @@ A [composite GitHub Action](action.yml) allows an existing project to evaluate i
     report-path: agent-evaluation-report.json
 ```
 
-Replace the example paths with your own files. The action reference above includes the reviewed input protection, literal-path handling and Unicode report fixes. See the [full workflow example](examples/github-actions/evaluate-agent.yml), [reproducible consumer trial](docs/CONSUMER_TRIAL.md) and [local action smoke test](.github/workflows/action-smoke.yml). Review changes before pinning a newer commit.
+Replace the example paths with your own files. The action reference above includes the reviewed input protection, literal-path handling and Unicode report fixes. See the [full workflow example](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/examples/github-actions/evaluate-agent.yml), [reproducible consumer trial](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/CONSUMER_TRIAL.md) and [local action smoke test](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/.github/workflows/action-smoke.yml). Review changes before pinning a newer commit.
 
 The checkout and setup-python actions use Node 24. Self-hosted runners running this example require Actions Runner 2.327.1 or newer; the repository CI uses GitHub-hosted runners. Authenticated Git commands from Docker container actions require Runner 2.329.0 or newer.
 
@@ -99,26 +99,26 @@ python -m pip install .
 nexus-evaluate examples/cases.json examples/predictions.json
 ```
 
-Run these example paths from the source directory. Source archives include the synthetic CLI fixtures, tests and Markdown documentation; wheels install the evaluator and CLI. Use a Git checkout for the full browser lab source and build checks. For other working directories, supply paths to your own JSON files. The installed interpreter can also run the same CLI with `python -m evaluator`. See [packaging checks](CONTRIBUTING.md#packaging-checks) for reproducible artifact and installation validation.
+Run these example paths from the source directory. Source archives include the synthetic CLI fixtures, tests and Markdown documentation; wheels install the evaluator and CLI. Use a Git checkout for the full browser lab source and build checks. For other working directories, supply paths to your own JSON files. The installed interpreter can also run the same CLI with `python -m evaluator`. See [packaging checks](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/CONTRIBUTING.md#packaging-checks) for reproducible artifact and installation validation.
 
-The project is **not published on PyPI**. The package metadata identifies version `0.3.0rc1`, an unpublished release candidate; see [CHANGELOG.md](CHANGELOG.md) and the [candidate checklist](docs/DECLARATION_LAB.md).
+The project is **not published on PyPI**. The package metadata identifies version `0.3.0rc1`, an unpublished release candidate; see [CHANGELOG.md](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/CHANGELOG.md) and the [candidate checklist](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/DECLARATION_LAB.md).
 
-See the [maintenance review](docs/MAINTENANCE_REVIEW.md) for the compatibility and release plan, prioritized follow-ups and evidence-based contribution opportunities.
+See the [maintenance review](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/MAINTENANCE_REVIEW.md) for the compatibility and release plan, prioritized follow-ups and evidence-based contribution opportunities.
 
 ## When *not* to use it
 
 This is not a substitute for execution traces, sandbox enforcement, permission checks, review independence, statistical model evaluation, or the validation of evidence integrity. An agent can report an allowed action without actually behaving correctly.
 
-Use independently designed development and held-out cases for meaningful evaluation; do not give hidden expected answers to the agent under test. See [SECURITY.md](SECURITY.md).
+Use independently designed development and held-out cases for meaningful evaluation; do not give hidden expected answers to the agent under test. See [SECURITY.md](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/SECURITY.md).
 
 ## Contribute or test it
 
 The most valuable feedback is **independent and reproducible**, including negative results.
 
-- [Five-minute trial](docs/TRY_IT.md) · [Submit genuine feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/new?template=trial_feedback.yml)
-- [Public roadmap](docs/ROADMAP.md) · [Duplicate-key test issue](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) and its [contributor PR](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/16)
+- [Five-minute trial](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/TRY_IT.md) · [Submit genuine feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/new?template=trial_feedback.yml)
+- [Public roadmap](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/ROADMAP.md) · [Duplicate-key test issue](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) and its [contributor PR](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/16)
 - Recent external regression contributions: [#26 — exact CLI pass-rate boundaries](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/26), [#27 — invalid UTF-8 inputs](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/27) (Aadithya-kl), and [#28 — optional case fields and required prediction lists](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/28) (jwalith4418-Mj). All three were merged after successful PR workflows. The combined [44-test suite](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45783225937) and all six workflows passed on main at `0f4933d`.
-- [Contributor guide](CONTRIBUTING.md) · [Bug reports and other issues](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues)
+- [Contributor guide](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/CONTRIBUTING.md) · [Bug reports and other issues](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues)
 
 Please use only synthetic or non-sensitive examples and never publish credentials or private agent data. Stars, forks and issue replies are not evidence of genuine usage without supporting details.
 
@@ -135,4 +135,4 @@ docs/ROADMAP.md                 # Prioritized opportunities
 .github/workflows/              # Python and composite-action CI
 ```
 
-MIT-licensed source code: [LICENSE](LICENSE).
+MIT-licensed source code: [LICENSE](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/LICENSE).
