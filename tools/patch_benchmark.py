@@ -67,7 +67,9 @@ def bounded(value):
 
 
 class Program:
-    def __init__(self, source, name, params):
+    def __init__(self, source, name, params, *, replay=False):
+        self.replay = replay
+        methods = METHODS | ({"add"} if replay else set())
         if not isinstance(source, str) or len(source) > MAX_SOURCE:
             raise Unsupported("source size")
         tree = ast.parse(source)
@@ -96,13 +98,13 @@ class Program:
                     or (type(n.value) is str and len(n.value) > 200)
                     or (type(n.value) is int and abs(n.value) > 10000)):
                 raise Unsupported("constant")
-            if isinstance(n, ast.Attribute) and n.attr not in METHODS:
+            if isinstance(n, ast.Attribute) and n.attr not in methods:
                 raise Unsupported("attribute")
             if isinstance(n, ast.Call):
                 if isinstance(n.func, ast.Name) and n.func.id == "ValueError" and id(n) not in raise_calls:
                     raise Unsupported("exception outside raise")
                 if n.keywords or not ((isinstance(n.func, ast.Name) and n.func.id in CALLS)
-                        or (isinstance(n.func, ast.Attribute) and n.func.attr in METHODS)):
+                        or (isinstance(n.func, ast.Attribute) and n.func.attr in methods)):
                     raise Unsupported("call")
             if isinstance(n, ast.Raise) and (n.cause is not None or
                     not isinstance(n.exc, ast.Call) or not isinstance(n.exc.func, ast.Name)
@@ -178,6 +180,12 @@ class Program:
                 obj = self.expr(f.value)
                 if f.attr == "strip" and type(obj) is str and not n.args:
                     return obj.strip()
+                if self.replay and f.attr == "add" and type(obj) is set and len(n.args) == 1:
+                    value = self.expr(n.args[0])
+                    if type(value) is not str or len(value) > 1000 or (len(obj) >= 64 and value not in obj):
+                        raise Unsupported("set addition")
+                    obj.add(value)
+                    return None
                 raise Unsupported("method")
             if f.id == "isinstance" and len(n.args) == 2:
                 kind = n.args[1]
@@ -187,6 +195,8 @@ class Program:
             vals = [self.expr(x) for x in n.args]
             if f.id == "len" and len(vals) == 1 and type(vals[0]) in (list, tuple, dict, str, set):
                 return len(vals[0])
+            if self.replay and f.id == "set" and not vals:
+                return set()
             if f.id == "set" and len(vals) == 1 and type(vals[0]) in (list, tuple, str):
                 return set(vals[0])
             if f.id == "ValueError" and len(vals) <= 1:
@@ -232,6 +242,8 @@ class Program:
                     self.tick()
                     self.assign(n.target, value)
                     self.block(n.body)
+            elif self.replay and isinstance(n, ast.Expr) and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Attribute) and n.value.func.attr == "add":
+                self.expr(n.value)
             elif isinstance(n, ast.Return):
                 raise Returned(bounded(self.expr(n.value)) if n.value else None)
             elif isinstance(n, ast.Raise):
@@ -272,9 +284,9 @@ TASKS = (
 )
 
 
-def assess_source(source, task):
+def assess_source(source, task, *, replay=False):
     _, name, params, _, _, _, cases = task
-    program = Program(source, name, params)
+    program = Program(source, name, params, replay=replay)
     results = []
     for args, expected in cases:
         try:
@@ -314,7 +326,26 @@ def self_test():
         pass
     else:
         raise AssertionError("expanded value budget not enforced")
-    print("Patch benchmark self-test passed: reference fixes, regressions, forbidden proposals and value budget")
+    # Exact archived 14B proposal; replay only, not a retroactive V1 score.
+    proposal = "def strings_value(value, field):\n    if not isinstance(value, list):\n        raise ValueError(field)\n    if len(value) == 0:\n        return value\n    seen = set()\n    for item in value:\n        if not isinstance(item, str) or not item.strip():\n            raise ValueError(field)\n        if item in seen:\n            raise ValueError(field)\n        seen.add(item)\n    return value"
+    assert hashlib.sha256(proposal.encode()).hexdigest() == "125d6cf690c14dfcd488bb54aad4fa0f81e250066c650b63e6b2d3b2324fb1fb"
+    try:
+        assess_source(proposal, TASKS[2])
+    except Unsupported:
+        pass
+    else:
+        raise AssertionError("original scorer must still reject")
+    replay = assess_source(proposal, TASKS[2], replay=True)
+    assert replay == {"passed_cases": 8, "total_cases": 8, "passed": True}
+    wrong = proposal.replace("if item in seen:", "if item not in seen:")
+    assert not assess_source(wrong, TASKS[2], replay=True)["passed"]
+    for source in bad:
+        try:
+            Program(source, "unique_object", ("pairs",), replay=True)
+        except (Unsupported, SyntaxError):
+            continue
+        raise AssertionError("unsafe syntax accepted in replay")
+    print("Patch benchmark self-test passed; archived 14B list proposal replay:", replay)
 
 
 def run(model):
