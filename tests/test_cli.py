@@ -160,6 +160,40 @@ class CLITests(unittest.TestCase):
     def test_missing_file(self):
         self.assertEqual(self.invoke().returncode, 2)
 
+    def test_invalid_utf8_input_rejected(self):
+        cases = json.loads((ROOT / "examples/cases.json").read_text(encoding="utf-8"))
+        # The 0xff byte sits in an ignored field, so a lenient decoder would accept.
+        cases[0]["note"] = "INVALID"
+        self.predictions["research-01"]["note"] = "INVALID"
+        valid = {
+            "cases": json.dumps(cases).encode("utf-8"),
+            "predictions": json.dumps(self.predictions).encode("utf-8"),
+        }
+        for broken in (None, *valid):
+            with self.subTest(invalid_input=broken):
+                folder = self.directory / str(broken)
+                folder.mkdir()
+                paths = {name: folder / f"{name}.json" for name in valid}
+                for name, data in valid.items():
+                    if name == broken:
+                        data = data.replace(b"INVALID", b"invalid \xff byte")
+                    paths[name].write_bytes(data)
+                out = folder / "report.json"
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / "evaluator.py"), str(paths["cases"]),
+                     str(paths["predictions"]), "--output", str(out)],
+                    capture_output=True, text=True, timeout=10,
+                )
+                if broken is None:
+                    # Control: the same fixtures are accepted when both are valid UTF-8.
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertTrue(out.exists())
+                    continue
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertEqual(result.stdout, "")
+                self.assertTrue(result.stderr.strip())
+                self.assertFalse(out.exists())
+
     def test_invalid_threshold(self):
         self.write_predictions()
         self.assertEqual(self.invoke("--min-pass-rate", "nan").returncode, 2)
