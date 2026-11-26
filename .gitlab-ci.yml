@@ -1,6 +1,14 @@
 stages:
   - test
 
+variables:
+  NEXUS_RUN_GPU_SMOKE:
+    value: "no"
+    options:
+      - "no"
+      - "yes"
+    description: "Run the bounded OSS GPU model benchmark. Select yes only for an intentional test."
+
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && $NEXUS_RUN_GPU_SMOKE == "yes"'

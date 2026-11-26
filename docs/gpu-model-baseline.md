@@ -26,3 +26,13 @@ with Codex. A passing result is necessary but not sufficient to proceed to
 OpenCode with a reviewed tool policy, filesystem isolation, no credentials,
 bounded execution and independent validation. Review the report and job logs
 before extending scope. No claim of successful GPU inference until a real run.
+
+## CPU preflight
+
+GitHub Actions runs a CPU-only preflight on pushes to the experiment branch:
+Python compilation, the benchmark's six self-test scenarios and the existing
+unit tests. It downloads no model and does not call GitLab or any AI service.
+Inspect this run before manually launching the GPU benchmark. The GitLab
+manual pipeline form now offers NEXUS_RUN_GPU_SMOKE with a safe default of no;
+choose yes explicitly for the one bounded run. A preflight success is not
+proof of GPU inference or agent coding quality.
