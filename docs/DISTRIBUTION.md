@@ -64,6 +64,12 @@ The [read-only reproducibility workflow](../.github/workflows/reproducible-packa
 
 CI resolves exactly one regular wheel and one regular sdist from the generated directory and rejects missing, additional or symlinked artifacts. It does not assume a filename containing `0.3.0rc1`, infer versions, or implement the project/artifact version-consistency task in issue #30. The versioned commands above are examples for this first candidate.
 
+## Retain and identify validated build artifacts
+
+After reproducibility, strict metadata checks and distribution installation tests succeed, the read-only CI workflow stages exactly the first canonical wheel and sdist, both build reports and a `SHA256SUMS` manifest. It checks the reports against the checked-out commit and actual archive hashes before retention and verifies the staged copies. The GitHub Actions artifact is named `nexus-validated-build-<run-id>-<run-attempt>` and requests 30 days of retention. It is not a PyPI or GitHub release.
+
+Download the artifact from the successful **main push** run for the explicitly approved commit; PR artifacts are development evidence only and must not be published. Record the run ID, attempt, artifact ID, commit and hashes. Keep a durable copy before expiration, extract to a clean directory, and verify the distributions against the manifest and both build reports (for example, `sha256sum -c SHA256SUMS` on Linux). The outer Actions artifact digest is distinct from the individual distribution hashes. Do not approve publication solely because a build was retained. Only the wheel and sdist would be eligible for a separately authorized upload; the JSON reports and manifest are evidence, not package files.
+
 ## Future Trusted Publishing setup
 
 The owner must approve the package name, exact version, source commit, artifact hashes and publication destination before any account or workflow setup. A public PyPI 404 is not proof of name ownership, availability or reservation. A [pending Trusted Publisher](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/) also does not reserve a name until its first use.

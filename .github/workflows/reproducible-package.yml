@@ -50,3 +50,51 @@ jobs:
                           str(wheel), str(sdist)], check=True)
           subprocess.run([sys.executable, "tests/check_distribution.py",
                           "--sdist", str(sdist), "--wheel", str(wheel)], check=True)
+      - name: Stage only the validated distributions and evidence
+        shell: python
+        run: |
+          import hashlib
+          import json
+          from pathlib import Path
+          import shutil
+          import subprocess
+          import sys
+
+          sys.path.insert(0, str(Path.cwd()))
+          from tools.build_reproducible import find_distributions
+
+          source = Path("dist/repro-a")
+          second = Path("dist/repro-b")
+          staging = Path("dist/validated-release")
+          revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          files = find_distributions(source)
+          hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+          reports = {}
+          for label, folder in (("a", source), ("b", second)):
+              report_path = folder / "build-details.json"
+              report = json.loads(report_path.read_text(encoding="utf-8"))
+              actual = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                        for p in find_distributions(folder)}
+              if report["source_commit"] != revision or report["sha256"] != hashes or actual != hashes:
+                  raise ValueError("build evidence does not match the tested commit and distributions")
+              reports[label] = report_path
+
+          staging.mkdir()
+          for artifact in files:
+              shutil.copyfile(artifact, staging / artifact.name)
+          for label, report_path in reports.items():
+              shutil.copyfile(report_path, staging / f"build-details-{label}.json")
+          manifest = "".join(f"{digest}  {name}\n" for name, digest in sorted(hashes.items()))
+          (staging / "SHA256SUMS").write_text(manifest, encoding="ascii")
+          for name, digest in hashes.items():
+              if hashlib.sha256((staging / name).read_bytes()).hexdigest() != digest:
+                  raise ValueError("staged distribution differs from validated bytes")
+      - name: Retain validated build evidence (not a release)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nexus-validated-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist/validated-release/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
