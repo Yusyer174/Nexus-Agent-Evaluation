@@ -27,6 +27,8 @@ Use the actual filenames if the version changes. The build frontend and setuptoo
 
 The distribution workflow tests Python 3.10 with the minimum backend and Python 3.13 on Linux, Windows and macOS. The regular unit workflow continues testing Python 3.10–3.13. Keep the MIT license text, runtime requirement and critical gates unchanged when maintaining packaging.
 
+For two controlled builds with fixed tooling, archive normalization, SHA-256 comparison and future Trusted Publishing requirements, follow [distribution preparation](docs/DISTRIBUTION.md). This process builds from a committed Git snapshot and never uploads packages.
+
 ## Reporting issues
 
 Describe the expected and actual behavior, the Python version, and a minimal reproducible example. Never include secrets, private data, or proprietary agent outputs. For security-sensitive reports, do not publish exploit details or credentials in public issues; contact the maintainer privately if a suitable channel is available.

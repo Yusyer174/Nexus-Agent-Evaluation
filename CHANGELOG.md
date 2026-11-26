@@ -2,6 +2,7 @@
 
 ## 0.3.0rc1 — unpublished review candidate
 
+- Prepare PyPI-compatible documentation links, controlled reproducible maintainer archives and an owner-approved Trusted Publishing procedure; no upload workflow is enabled.
 - Add eight synthetic declaration-lab scenarios, regression checks for wrong decisions, unlisted actions and missing evidence, and explicit counterexamples documenting the limits of declaration-only evaluation.
 - Add deterministic report-order and input-type regressions; cover duplicate evidence IDs and duplicate keys in cases input.
 - Add the browser-based Evaluation Lab and link its published demo. No model benchmark or independent adoption is claimed.
