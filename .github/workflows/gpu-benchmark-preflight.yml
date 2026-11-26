@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.10'
       - name: Compile benchmark and evaluator
-        run: python -m py_compile tools/gpu_model_smoke.py evaluator.py
+        run: python -m py_compile tools/gpu_model_smoke.py tools/cuda_driver_probe.py evaluator.py
       - name: Check benchmark acceptance and rejection cases
         run: PYTHONPATH=. python tools/gpu_model_smoke.py --self-test
       - name: Run existing evaluator tests

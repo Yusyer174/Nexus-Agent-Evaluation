@@ -3,8 +3,8 @@ spec:
     run_gpu_smoke:
       type: string
       default: "no"
-      options: ["no", "diagnostics"]
-      description: "Run only the bounded CUDA driver diagnostic; no model download."
+      options: ["no", "diagnostics", "yes"]
+      description: "Choose diagnostics for driver-only checks or yes for the bounded GPU model benchmark."
 ---
 stages:
   - test
@@ -14,12 +14,14 @@ variables:
 
 workflow:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && $NEXUS_RUN_GPU_SMOKE == "diagnostics"'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && ($NEXUS_RUN_GPU_SMOKE == "diagnostics" || $NEXUS_RUN_GPU_SMOKE == "yes")'
     - when: never
 
 cuda-diagnostics:
   stage: test
-  image: nvcr.io/nvidia/cuda:12.1.1-base-ubuntu22.04
+  rules:
+    - if: '$NEXUS_RUN_GPU_SMOKE == "diagnostics"'
+  image: nvcr.io/nvidia/cuda:12.1.1-base-ubuntu22.04@sha256:457a4076c56025f51217bff647ca631c7880ad3dbf546b03728ba98297ebbc22
   tags:
     - saas-linux-medium-amd64-gpu-standard
   timeout: 5m
@@ -47,39 +49,45 @@ cuda-diagnostics:
       - cuda-driver-report.json
     expire_in: 1 week
 
-# Model benchmark retained for reference but disabled until CUDA diagnosis succeeds.
-.model-smoke:
+model-smoke:
   stage: test
-  image:
-    name: ollama/ollama:0.40.18@sha256:1cabd20e1762a7a8444bf4a7110b346d923cd77ab6c97c984434140638c913ec
-    entrypoint: [""]
+  rules:
+    - if: '$NEXUS_RUN_GPU_SMOKE == "yes"'
+  image: nvcr.io/nvidia/cuda:12.1.1-base-ubuntu22.04@sha256:457a4076c56025f51217bff647ca631c7880ad3dbf546b03728ba98297ebbc22
   tags:
     - saas-linux-medium-amd64-gpu-standard
   timeout: 20m
   variables:
     GIT_STRATEGY: clone
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    NVIDIA_VISIBLE_DEVICES: all
   script:
     - test '$[[ inputs.run_gpu_smoke ]]' = yes
-    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 util-linux
-    - |
-      if command -v nvidia-smi >/dev/null 2>&1; then
-        nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader || echo "Optional NVIDIA telemetry unavailable"
-      else
-        echo "nvidia-smi absent in the container; GPU use will be checked via Ollama API"
-      fi
-      ls -l /dev/nvidia* 2>/dev/null || echo "No NVIDIA device nodes visible in diagnostic listing"
-      ldconfig -p 2>/dev/null | grep -E 'libcuda\.so|libnvidia-ml\.so' || true
-    - install -d -m 0700 -o nobody -g nogroup /tmp/nexus-model
-    - install -m 0444 evaluator.py tools/gpu_model_smoke.py /tmp/nexus-model/
+    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 util-linux curl ca-certificates zstd
+    - install -d -m 0700 -o nobody -g nogroup /tmp/nexus-model /tmp/nexus-model/ollama
+    - install -m 0444 evaluator.py tools/gpu_model_smoke.py tools/cuda_driver_probe.py /tmp/nexus-model/
     - |
       set -eu
       local_run() {
-        runuser -u nobody -- env -i HOME=/tmp/nexus-model PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS=/tmp/nexus-model/models OLLAMA_NO_CLOUD=1 "$@"
+        runuser -u nobody -- env -i HOME=/tmp/nexus-model PATH=/tmp/nexus-model/ollama/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/nvidia/lib:/usr/lib/x86_64-linux-gnu OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS=/tmp/nexus-model/models OLLAMA_NO_CLOUD=1 "$@"
       }
+      nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader || true
+      local_run timeout 45s python3 /tmp/nexus-model/cuda_driver_probe.py > "$CI_PROJECT_DIR/cuda-driver-report.json" || { cat "$CI_PROJECT_DIR/cuda-driver-report.json"; exit 1; }
+      cat "$CI_PROJECT_DIR/cuda-driver-report.json"
       local_run python3 /tmp/nexus-model/gpu_model_smoke.py --self-test
+      local_run timeout 300s curl --fail --location --silent --show-error --retry 2 --proto '=https' --proto-redir '=https' -o /tmp/nexus-model/ollama.tar.zst 'https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-amd64.tar.zst'
+      printf '%s  %s\n' 'b82649006cb5b54ed1237fa2d1a26a7f939a4fd03150033759acbff7ff315adf' /tmp/nexus-model/ollama.tar.zst | sha256sum -c -
+      local_run timeout 120s tar --zstd -xf /tmp/nexus-model/ollama.tar.zst -C /tmp/nexus-model/ollama
+      rm -f /tmp/nexus-model/ollama.tar.zst
+      test -x /tmp/nexus-model/ollama/bin/ollama
       local_run ollama serve >/tmp/nexus-ollama.log 2>&1 &
       server_pid=$!
-      trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+      cleanup() {
+        kill "$server_pid" 2>/dev/null || true
+        # Only capture bounded runtime diagnostics from the stripped-environment local server.
+        tail -n 80 /tmp/nexus-ollama.log || true
+      }
+      trap cleanup EXIT
       local_run python3 /tmp/nexus-model/gpu_model_smoke.py --ready
       local_run timeout 480s ollama pull qwen2.5-coder:7b
       cd /tmp/nexus-model
@@ -92,5 +100,6 @@ cuda-diagnostics:
   artifacts:
     when: always
     paths:
+      - cuda-driver-report.json
       - model-smoke-report.json
     expire_in: 1 week

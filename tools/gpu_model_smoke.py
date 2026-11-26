@@ -9,7 +9,7 @@ import urllib.request
 from evaluator import _unique_object
 
 MODEL = "qwen2.5-coder:7b"
-DIGEST_PREFIX = "dae161e27b0e"
+EXPECTED_DIGEST = "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364"
 VERSION = "0.40.18"
 URL = "http://127.0.0.1:11434"
 REPORT = pathlib.Path("model-smoke-report.json")
@@ -117,7 +117,7 @@ def run():
         tags = api("/api/tags")["models"]
         entry = next(m for m in tags if m["name"] == MODEL)
         digest = entry["digest"].removeprefix("sha256:")
-        if not digest.startswith(DIGEST_PREFIX):
+        if digest != EXPECTED_DIGEST:
             raise ValueError("Unexpected model digest")
         report.update({"digest": digest, "ollama": VERSION, "stage": "generation"})
         prompt = (
