@@ -117,6 +117,7 @@ The most valuable feedback is **independent and reproducible**, including negati
 
 - [Five-minute trial](docs/TRY_IT.md) · [Submit genuine feedback](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/new?template=trial_feedback.yml)
 - [Public roadmap](docs/ROADMAP.md) · [Duplicate-key test issue](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) and its [contributor PR](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/16)
+- Recent external regression contributions: [#26 — exact CLI pass-rate boundaries](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/26), [#27 — invalid UTF-8 inputs](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/27) (Aadithya-kl), and [#28 — optional case fields and required prediction lists](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/28) (jwalith4418-Mj). All three were merged after successful PR workflows. The combined [44-test suite](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45783225937) and all six workflows passed on main at `0f4933d`.
 - [Contributor guide](CONTRIBUTING.md) · [Bug reports and other issues](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues)
 
 Please use only synthetic or non-sensitive examples and never publish credentials or private agent data. Stars, forks and issue replies are not evidence of genuine usage without supporting details.
