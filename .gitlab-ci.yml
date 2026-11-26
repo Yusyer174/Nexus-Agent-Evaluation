@@ -3,8 +3,8 @@ spec:
     run_gpu_smoke:
       type: string
       default: "no"
-      options: ["no", "yes"]
-      description: "Run the bounded OSS GPU model benchmark (yes = explicit consent)."
+      options: ["no", "diagnostics"]
+      description: "Run only the bounded CUDA driver diagnostic; no model download."
 ---
 stages:
   - test
@@ -14,10 +14,41 @@ variables:
 
 workflow:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && $NEXUS_RUN_GPU_SMOKE == "yes"'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && $NEXUS_RUN_GPU_SMOKE == "diagnostics"'
     - when: never
 
-model-smoke:
+cuda-diagnostics:
+  stage: test
+  image: nvcr.io/nvidia/cuda:12.1.1-base-ubuntu22.04
+  tags:
+    - saas-linux-medium-amd64-gpu-standard
+  timeout: 5m
+  variables:
+    GIT_STRATEGY: clone
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  script:
+    - test '$[[ inputs.run_gpu_smoke ]]' = diagnostics
+    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 util-linux
+    - |
+      set -eu
+      ls -l /dev/nvidia* 2>/dev/null || true
+      if command -v nvidia-smi >/dev/null 2>&1; then
+        nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader || true
+      fi
+      ldconfig -p | grep -E 'libcuda\\.so|libnvidia-ml\\.so' || true
+      install -d -m 0700 -o nobody -g nogroup /tmp/nexus-cuda-check
+      install -m 0444 tools/cuda_driver_probe.py /tmp/nexus-cuda-check/
+      runuser -u nobody -- env -i HOME=/tmp/nexus-cuda-check PATH=/usr/bin:/bin LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/nvidia/lib:/usr/lib/x86_64-linux-gnu timeout 45s python3 /tmp/nexus-cuda-check/cuda_driver_probe.py > cuda-driver-report.json || result=$?
+      cat cuda-driver-report.json
+      exit "${result:-0}"
+  artifacts:
+    when: always
+    paths:
+      - cuda-driver-report.json
+    expire_in: 1 week
+
+# Model benchmark retained for reference but disabled until CUDA diagnosis succeeds.
+.model-smoke:
   stage: test
   image:
     name: ollama/ollama:0.40.18@sha256:1cabd20e1762a7a8444bf4a7110b346d923cd77ab6c97c984434140638c913ec
