@@ -4,7 +4,7 @@ This is an educational, standalone Python evaluator. It does **not** execute age
 
 ## Supported scope
 
-The current 0.2.x prototype is maintained on a best-effort basis. Its input validation and report generation are testable, but it is **not certified for security-critical or financial decisions**.
+The 0.2.x prototype and unpublished 0.3.0rc1 review candidate are maintained on a best-effort basis. Their input validation and report generation are testable, but they are **not certified for security-critical or financial decisions**.
 
 ## Reporting a potential vulnerability
 

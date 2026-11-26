@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.3.0rc1 — unpublished review candidate
+
+- Add eight synthetic declaration-lab scenarios, regression checks for wrong decisions, unlisted actions and missing evidence, and explicit counterexamples documenting the limits of declaration-only evaluation.
+- Add deterministic report-order and input-type regressions; cover duplicate evidence IDs and duplicate keys in cases input.
+- Add the browser-based Evaluation Lab and link its published demo. No model benchmark or independent adoption is claimed.
 
 - Add a reproducible caller demonstration with retained reports and exact expected exits, and verify the published Action at reviewed commit 1449a91. Include its runner/fixtures in source archives. This is synthetic software evidence, not an adoption claim.
 
