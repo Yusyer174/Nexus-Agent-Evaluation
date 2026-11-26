@@ -49,3 +49,7 @@ Job 18406865347 at c1ba291b downloaded and verified Qwen2.5-Coder 7B (4.7 GB), g
 ## Third run passed; integrated CUDA model benchmark
 
 Job 18407264267 at 581b743 completed in 29 seconds: Tesla T4, 15360 MiB, driver 580.178.04; cuInit=0, cuDeviceGetCount=0, device_count=1, passed=true under nobody. The CUDA image is now pinned to the manifest observed in that job. The model job is re-enabled with input yes, while diagnostics remains a separate optional driver-only job. Both are manual-only; no scheduled jobs. The new model job uses the validated CUDA base and explicitly preserves the same driver library search path under its stripped unprivileged environment. It checks CUDA before downloading any model. Ollama 0.40.18 is downloaded as the official versioned Linux amd64 release archive and SHA-256 verified against the digest from the GitHub releases API before extraction as nobody. The model manifest digest is now checked in full against the observed second-run digest. The checked-in evaluator and independent JSON oracle remain unchanged. The model benchmark has not yet run in this environment; binary compatibility and GPU inference remain unverified. No model output is executed. This supersedes the diagnostic-only instructions above.
+
+## Integrated baseline passed
+
+See [Coding Benchmark V1](coding-benchmark-v1.md) for verified result and the subsequent comparison experiment.

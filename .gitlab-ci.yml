@@ -3,8 +3,8 @@ spec:
     run_gpu_smoke:
       type: string
       default: "no"
-      options: ["no", "diagnostics", "yes"]
-      description: "Choose diagnostics for driver-only checks or yes for the bounded GPU model benchmark."
+      options: ["no", "diagnostics", "yes", "compare"]
+      description: "Choose compare for four-model coding screening, yes for the baseline, or diagnostics."
 ---
 stages:
   - test
@@ -14,7 +14,7 @@ variables:
 
 workflow:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && ($NEXUS_RUN_GPU_SMOKE == "diagnostics" || $NEXUS_RUN_GPU_SMOKE == "yes")'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && ($NEXUS_RUN_GPU_SMOKE == "diagnostics" || $NEXUS_RUN_GPU_SMOKE == "yes" || $NEXUS_RUN_GPU_SMOKE == "compare")'
     - when: never
 
 cuda-diagnostics:
@@ -102,4 +102,63 @@ model-smoke:
     paths:
       - cuda-driver-report.json
       - model-smoke-report.json
+    expire_in: 1 week
+
+coding-compare:
+  parallel:
+    matrix:
+      - BENCH_MODEL: ['qwen2.5-coder:7b', 'qwen2.5-coder:14b', 'qwen3.5:9b-q4_K_M', 'mimo-v2.6:9b-q4_K_M']
+  stage: test
+  rules:
+    - if: '$NEXUS_RUN_GPU_SMOKE == "compare"'
+  image: nvcr.io/nvidia/cuda:12.1.1-base-ubuntu22.04@sha256:457a4076c56025f51217bff647ca631c7880ad3dbf546b03728ba98297ebbc22
+  tags:
+    - saas-linux-medium-amd64-gpu-standard
+  timeout: 20m
+  variables:
+    GIT_STRATEGY: clone
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    NVIDIA_VISIBLE_DEVICES: all
+  script:
+    - test '$[[ inputs.run_gpu_smoke ]]' = compare
+    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 util-linux curl ca-certificates zstd
+    - install -d -m 0700 -o nobody -g nogroup /tmp/nexus-model /tmp/nexus-model/ollama
+    - install -m 0444 evaluator.py tools/gpu_model_smoke.py tools/cuda_driver_probe.py tools/coding_benchmark.py /tmp/nexus-model/
+    - |
+      set -eu
+      local_run() {
+        runuser -u nobody -- env -i HOME=/tmp/nexus-model PATH=/tmp/nexus-model/ollama/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/nvidia/lib:/usr/lib/x86_64-linux-gnu OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS=/tmp/nexus-model/models OLLAMA_NO_CLOUD=1 "$@"
+      }
+      nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader || true
+      local_run timeout 45s python3 /tmp/nexus-model/cuda_driver_probe.py > "$CI_PROJECT_DIR/cuda-driver-report.json" || { cat "$CI_PROJECT_DIR/cuda-driver-report.json"; exit 1; }
+      cat "$CI_PROJECT_DIR/cuda-driver-report.json"
+      local_run python3 /tmp/nexus-model/coding_benchmark.py --self-test
+      local_run timeout 300s curl --fail --location --silent --show-error --retry 2 --proto '=https' --proto-redir '=https' -o /tmp/nexus-model/ollama.tar.zst 'https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-amd64.tar.zst'
+      printf '%s  %s\n' 'b82649006cb5b54ed1237fa2d1a26a7f939a4fd03150033759acbff7ff315adf' /tmp/nexus-model/ollama.tar.zst | sha256sum -c -
+      local_run timeout 120s tar --zstd -xf /tmp/nexus-model/ollama.tar.zst -C /tmp/nexus-model/ollama
+      rm -f /tmp/nexus-model/ollama.tar.zst
+      test -x /tmp/nexus-model/ollama/bin/ollama
+      local_run ollama serve >/tmp/nexus-ollama.log 2>&1 &
+      server_pid=$!
+      cleanup() {
+        kill "$server_pid" 2>/dev/null || true
+        # Only capture bounded runtime diagnostics from the stripped-environment local server.
+        tail -n 80 /tmp/nexus-ollama.log || true
+      }
+      trap cleanup EXIT
+      local_run python3 /tmp/nexus-model/gpu_model_smoke.py --ready
+      local_run timeout 480s ollama pull "$BENCH_MODEL"
+      cd /tmp/nexus-model
+      result=0
+      local_run timeout 900s python3 coding_benchmark.py --model "$BENCH_MODEL" || result=$?
+      if test -f coding-benchmark-report.json; then
+        install -m 0644 coding-benchmark-report.json "$CI_PROJECT_DIR/coding-benchmark-report.json"
+      fi
+      exit "$result"
+  artifacts:
+    name: 'coding-compare-$CI_JOB_ID'
+    when: always
+    paths:
+      - cuda-driver-report.json
+      - coding-benchmark-report.json
     expire_in: 1 week
