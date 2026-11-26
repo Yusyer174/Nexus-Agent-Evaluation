@@ -41,6 +41,31 @@ TYPES = {"str": str, "list": list}
 METHODS = {"strip"}
 
 
+def bounded(value):
+    """Bound expanded container size (including repeated aliases) and depth."""
+    todo = [(value, 0)]
+    remaining = 512
+    while todo:
+        item, depth = todo.pop()
+        remaining -= 1
+        if remaining < 0 or depth > 12:
+            raise Unsupported("value budget")
+        if type(item) in (list, tuple, set):
+            if len(item) > 64:
+                raise Unsupported("container size")
+            todo.extend((v, depth + 1) for v in item)
+        elif type(item) is dict:
+            if len(item) > 64 or any(type(k) is not str for k in item):
+                raise Unsupported("dictionary shape")
+            todo.extend((v, depth + 1) for v in item.values())
+        elif type(item) is str:
+            if len(item) > 1000:
+                raise Unsupported("string size")
+        elif type(item) not in (int, bool, type(None)):
+            raise Unsupported("value type")
+    return value
+
+
 class Program:
     def __init__(self, source, name, params):
         if not isinstance(source, str) or len(source) > MAX_SOURCE:
@@ -59,11 +84,14 @@ class Program:
         nodes = list(ast.walk(tree))
         if len(nodes) > 240 or any(not isinstance(n, NODES) for n in nodes):
             raise Unsupported("syntax")
+        raise_calls = {id(n.exc) for n in nodes if isinstance(n, ast.Raise)}
         for n in nodes:
             if isinstance(n, ast.FunctionDef) and n is not fn:
                 raise Unsupported("nested function")
             if isinstance(n, ast.Name) and (n.id.startswith("_") or len(n.id) > 40):
                 raise Unsupported("name")
+            if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store) and n.id in CALLS | TYPES.keys():
+                raise Unsupported("reserved name")
             if isinstance(n, ast.Constant) and (type(n.value) not in (str, int, bool, type(None))
                     or (type(n.value) is str and len(n.value) > 200)
                     or (type(n.value) is int and abs(n.value) > 10000)):
@@ -71,6 +99,8 @@ class Program:
             if isinstance(n, ast.Attribute) and n.attr not in METHODS:
                 raise Unsupported("attribute")
             if isinstance(n, ast.Call):
+                if isinstance(n.func, ast.Name) and n.func.id == "ValueError" and id(n) not in raise_calls:
+                    raise Unsupported("exception outside raise")
                 if n.keywords or not ((isinstance(n.func, ast.Name) and n.func.id in CALLS)
                         or (isinstance(n.func, ast.Attribute) and n.func.attr in METHODS)):
                     raise Unsupported("call")
@@ -127,9 +157,9 @@ class Program:
                     return value
             return value
         if isinstance(n, ast.Compare):
-            left = self.expr(n.left)
+            left = bounded(self.expr(n.left))
             for op, term in zip(n.ops, n.comparators):
-                right = self.expr(term)
+                right = bounded(self.expr(term))
                 if isinstance(op, ast.Eq):
                     ok = left == right
                 elif isinstance(op, ast.NotEq):
@@ -166,6 +196,7 @@ class Program:
 
     def assign(self, target, value):
         self.tick()
+        bounded(value)
         if isinstance(target, ast.Name):
             self.env[target.id] = value
         elif isinstance(target, (ast.Tuple, ast.List)):
@@ -202,7 +233,7 @@ class Program:
                     self.assign(n.target, value)
                     self.block(n.body)
             elif isinstance(n, ast.Return):
-                raise Returned(self.expr(n.value) if n.value else None)
+                raise Returned(bounded(self.expr(n.value)) if n.value else None)
             elif isinstance(n, ast.Raise):
                 self.expr(n.exc)
                 raise Unsupported("raise")
@@ -264,6 +295,8 @@ def self_test():
         "def unique_object(pairs):\n    return pairs.__class__",
         "def unique_object(pairs):\n    while True:\n        return {}",
         "def unique_object(pairs):\n    return eval('1')",
+        "def unique_object(pairs):\n    return ValueError('x')",
+        "def unique_object(pairs):\n    len = 0\n    return {}",
         "def unique_object(pairs):\n    return {}\nprint('x')",
     )
     for source in bad:
@@ -272,7 +305,16 @@ def self_test():
         except (Unsupported, SyntaxError):
             continue
         raise AssertionError("unsafe syntax accepted")
-    print("Patch benchmark self-test passed: 3 reference fixes, 3 regressions, 6 forbidden proposals")
+    nested = [0]
+    for _ in range(15):
+        nested = [nested, nested]
+    try:
+        bounded(nested)
+    except Unsupported:
+        pass
+    else:
+        raise AssertionError("expanded value budget not enforced")
+    print("Patch benchmark self-test passed: reference fixes, regressions, forbidden proposals and value budget")
 
 
 def run(model):
