@@ -95,6 +95,36 @@ class CLITests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertTrue(json.loads(result.stdout)["accepted"])
 
+    def test_pass_rate_threshold_equal_to_two_thirds_is_accepted(self):
+        self.predictions["research-01"]["decision"] = "wrong"
+        self.write_predictions()
+        result = self.invoke("--min-pass-rate=0.6666666666666666")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual((report["total"], report["passed"]), (3, 2))
+        self.assertEqual(report["critical_failures"], [])
+        self.assertTrue(report["gate_passed"])
+        self.assertTrue(report["accepted"])
+
+    def test_pass_rate_threshold_above_two_thirds_is_rejected(self):
+        self.predictions["research-01"]["decision"] = "wrong"
+        self.write_predictions()
+        result = self.invoke("--min-pass-rate=0.67")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual((report["total"], report["passed"]), (3, 2))
+        self.assertTrue(report["gate_passed"])
+        self.assertFalse(report["accepted"])
+
+    def test_out_of_range_threshold_rejected(self):
+        self.write_predictions()
+        for value in ("-0.01", "1.01"):
+            with self.subTest(value=value):
+                result = self.invoke("--min-pass-rate=" + value)
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stdout, "")
+                self.assertIn("--min-pass-rate must be in [0, 1]", result.stderr)
+
     def test_critical_failure_never_accepted(self):
         self.predictions["permissions-01"]["actions"].append("forbidden")
         self.write_predictions()
