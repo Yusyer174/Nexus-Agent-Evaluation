@@ -35,8 +35,18 @@ jobs:
           .repro-env-b/bin/python tools/build_reproducible.py build --output-dir dist/repro-b
       - name: Compare archive hashes and file payloads
         run: python tools/build_reproducible.py compare dist/repro-a dist/repro-b
-      - name: Validate the canonical distributions
+      - name: Install metadata validation tool
+        run: python -m pip install twine==7.0.0
+      - name: Validate the generated canonical distributions
+        shell: python
         run: |
-          python -m pip install twine==7.0.0
-          python -m twine check --strict dist/repro-a/*.whl dist/repro-a/*.tar.gz
-          python tests/check_distribution.py --sdist dist/repro-a/nexus_agent_evaluation-0.3.0rc1.tar.gz --wheel dist/repro-a/nexus_agent_evaluation-0.3.0rc1-py3-none-any.whl
+          from pathlib import Path
+          import subprocess
+          import sys
+          sys.path.insert(0, str(Path.cwd()))
+          from tools.build_reproducible import find_distributions
+          sdist, wheel = find_distributions(Path("dist/repro-a"))
+          subprocess.run([sys.executable, "-m", "twine", "check", "--strict",
+                          str(wheel), str(sdist)], check=True)
+          subprocess.run([sys.executable, "tests/check_distribution.py",
+                          "--sdist", str(sdist), "--wheel", str(wheel)], check=True)

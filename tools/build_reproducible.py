@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import stat
 import subprocess
 import sys
 import tarfile
@@ -24,41 +25,66 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def safe_name(name):
-    path = PurePosixPath(name)
-    if path.is_absolute() or '..' in path.parts or '\\' in name or not path.parts:
+    clean = name[:-1] if name.endswith('/') else name
+    path = PurePosixPath(clean)
+    if (path.is_absolute() or '..' in path.parts or '\\' in name or not path.parts
+            or clean != path.as_posix() or ':' in path.parts[0]):
         raise ValueError(f'unsupported archive path: {name!r}')
     return path
 
 
-def archive_contents(path):
-    """Return regular file bytes, rejecting ambiguous or special members."""
-    result = {}
+def _archive_members(path):
+    """Read payloads and executable modes; reject ambiguous member layouts."""
+    result, modes, entries = {}, {}, {}
+
+    def register(name, directory, mode, data):
+        name = str(safe_name(name))
+        if name in entries or mode & 0o7000 or (directory and data):
+            raise ValueError(f'unsupported or duplicate archive member: {name}')
+        entries[name] = directory
+        if not directory:
+            result[name] = data
+            modes[name] = 0o755 if mode & 0o111 else 0o644
+
     if path.name.endswith('.whl'):
         with zipfile.ZipFile(path) as archive:
             for member in archive.infolist():
-                safe_name(member.filename)
-                if member.is_dir():
-                    continue
-                if member.filename in result:
-                    raise ValueError(f'duplicate archive member: {member.filename}')
-                result[member.filename] = archive.read(member)
+                mode = member.external_attr >> 16
+                kind, directory = stat.S_IFMT(mode), member.is_dir()
+                if (kind not in (0, stat.S_IFREG, stat.S_IFDIR)
+                        or (kind == stat.S_IFDIR and not directory)
+                        or (kind == stat.S_IFREG and directory)
+                        or (member.external_attr & 0x10 and not directory)):
+                    raise ValueError(f'unsupported ZIP member type: {member.filename}')
+                register(member.filename, directory, mode, archive.read(member))
     else:
         with tarfile.open(path) as archive:
             for member in archive:
-                safe_name(member.name)
                 if member.isdir():
-                    continue
-                if not member.isfile() or member.name in result:
+                    if member.size:
+                        raise ValueError(f'nonempty TAR directory member: {member.name}')
+                    register(member.name, True, member.mode, b'')
+                elif member.type in (tarfile.REGTYPE, tarfile.AREGTYPE) and not member.issparse():
+                    register(member.name, False, member.mode, archive.extractfile(member).read())
+                else:
                     raise ValueError(f'unsupported or duplicate archive member: {member.name}')
-                result[member.name] = archive.extractfile(member).read()
-    return result
+    for name in entries:
+        if any(str(parent) in entries and not entries[str(parent)]
+               for parent in safe_name(name).parents):
+            raise ValueError(f'file/directory collision in archive: {name}')
+    return result, modes
+
+
+def archive_contents(path):
+    """Return regular file bytes, rejecting ambiguous or special members."""
+    return _archive_members(path)[0]
 
 
 def canonicalize(source, destination, epoch):
     """Preserve file payloads while fixing ordering, modes and archive headers."""
     if not 315532800 <= epoch <= 4294967295:
         raise ValueError('SOURCE_DATE_EPOCH must be in the ZIP/gzip range (1980 to 2106)')
-    files = archive_contents(source)
+    files, modes = _archive_members(source)
     if source.name.endswith('.whl'):
         timestamp = datetime.fromtimestamp(epoch, timezone.utc).timetuple()[:6]
         with zipfile.ZipFile(destination, 'x', compression=zipfile.ZIP_DEFLATED,
@@ -66,7 +92,7 @@ def canonicalize(source, destination, epoch):
             for name, data in sorted(files.items()):
                 member = zipfile.ZipInfo(name, timestamp)
                 member.create_system = 3
-                member.external_attr = 0o100644 << 16
+                member.external_attr = (stat.S_IFREG | modes[name]) << 16
                 member.compress_type = zipfile.ZIP_DEFLATED
                 archive.writestr(member, data, compresslevel=9)
     else:
@@ -85,26 +111,33 @@ def canonicalize(source, destination, epoch):
                             archive.addfile(member)
                         else:
                             data = files[name]
-                            member.mode = 0o644
+                            member.mode = modes[name]
                             member.size = len(data)
                             archive.addfile(member, io.BytesIO(data))
-    if archive_contents(destination) != files:
-        raise ValueError('archive normalization changed file payloads')
+    if _archive_members(destination) != (files, modes):
+        raise ValueError('archive normalization changed file payloads or executable modes')
 
 
 def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def compare(first, second):
-    def artifacts(folder):
-        return {p.name: p for p in folder.iterdir()
-                if p.name.endswith(('.whl', '.tar.gz'))}
-    left, right = artifacts(first), artifacts(second)
-    if not left or left.keys() != right.keys():
-        raise ValueError('build directories contain different or no distribution filenames')
-    if sum(name.endswith('.whl') for name in left) != 1 or len(left) != 2:
+def find_distributions(folder):
+    """Resolve generated filenames without inferring or comparing versions."""
+    wheels = list(folder.glob('*.whl'))
+    sources = list(folder.glob('*.tar.gz'))
+    if len(wheels) != 1 or len(sources) != 1:
         raise ValueError('expected exactly one wheel and one sdist per build')
+    if any(not p.is_file() or p.is_symlink() for p in (*sources, *wheels)):
+        raise ValueError('distribution paths must be regular files, not symlinks')
+    return sources[0], wheels[0]
+
+
+def compare(first, second):
+    left = {p.name: p for p in find_distributions(first)}
+    right = {p.name: p for p in find_distributions(second)}
+    if left.keys() != right.keys():
+        raise ValueError('build directories contain different distribution filenames')
     report = {}
     for name in sorted(left):
         same_payload = archive_contents(left[name]) == archive_contents(right[name])
@@ -158,15 +191,16 @@ def build(output):
                 if member.isdir():
                     target.mkdir(parents=True, exist_ok=True)
                 elif member.isfile():
+                    if os.name == 'nt' and member.mode & 0o111:
+                        raise ValueError('executable Git source members require a POSIX build host')
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(archive.extractfile(member).read())
+                    target.chmod(member.mode & 0o777)
                 else:
                     raise ValueError(f'unsupported source member: {member.name}')
         subprocess.run([sys.executable, '-m', 'build', '--no-isolation', '--outdir', str(raw),
                         str(source)], env=environment, check=True, timeout=180)
-        artifacts = sorted(raw.iterdir())
-        if len(artifacts) != 2 or not any(p.suffix == '.whl' for p in artifacts):
-            raise ValueError('build did not produce exactly a wheel and an sdist')
+        artifacts = find_distributions(raw)
         for artifact in artifacts:
             canonicalize(artifact, output / artifact.name, epoch)
     report = {'source_commit': revision, 'source_date_epoch': epoch,
