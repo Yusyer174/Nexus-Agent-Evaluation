@@ -1,0 +1,90 @@
+{
+  "model": "ollama/qwen2.5-coder:14b",
+  "providers": {
+    "ollama": {
+      "settings": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
+      "package": "@opencode/ai/providers/openai-compatible",
+      "models": {
+        "qwen2.5-coder:14b": {
+          "name": "Qwen2.5-Coder 14B"
+        }
+      }
+    }
+  },
+  "permissions": [
+    {
+      "action": "*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "evaluator.py",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "task-note.txt",
+      "effect": "allow"
+    }
+  ],
+  "policies": [
+    {
+      "action": "provider.use",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "provider.use",
+      "resource": "ollama",
+      "effect": "allow"
+    },
+    {
+      "action": "tool.use",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "tool.use",
+      "resource": "read:*",
+      "effect": "allow"
+    },
+    {
+      "action": "integration.connect",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "integration.use",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "mcp.use",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill.use",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "plugin.use",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "websearch.use",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "integration.use",
+      "resource": "ollama",
+      "effect": "allow"
+    }
+  ]
+}

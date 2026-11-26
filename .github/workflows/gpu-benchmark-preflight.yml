@@ -2,7 +2,7 @@ name: GPU benchmark preflight
 
 on:
   push:
-    branches: [experiment/gpu-capability-probe]
+    branches: [experiment/gpu-capability-probe, experiment/opencode-readonly-pilot]
 
 permissions:
   contents: read
@@ -28,3 +28,9 @@ jobs:
         run: PYTHONPATH=. python tools/patch_benchmark.py --self-test
       - name: Run existing evaluator tests
         run: python -m unittest discover -s tests -v
+      - name: Check isolated OpenCode proposal scorer
+        if: github.ref_name == 'experiment/opencode-readonly-pilot'
+        run: |
+          bash -n experiments/opencode/run-pilot.sh
+          python -m compileall -q experiments/opencode
+          PYTHONPATH=.:tools python -m unittest discover -s experiments/opencode -v
