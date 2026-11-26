@@ -1,39 +1,46 @@
+stages:
+  - test
+
 workflow:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && $NEXUS_RUN_GPU_SMOKE == "yes"'
     - when: never
 
-agent-smoke:
+model-smoke:
+  stage: test
   image:
-    name: ollama/ollama:latest
+    name: ollama/ollama:0.40.18
     entrypoint: [""]
   tags:
     - saas-linux-medium-amd64-gpu-standard
   timeout: 20m
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: clone
   script:
-    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl ca-certificates git python3 nodejs npm util-linux
-    - npm install --global @opencode/cli
-    - install -d -m 0777 /tmp/nexus-agent /tmp/nexus-work
-    - curl -fsSL https://github.com/Yusyer174/Nexus-Agent-Evaluation/archive/95914a9f89b317853d12c6deea83d6f231fcf74d.tar.gz | tar -xz -C /tmp/nexus-work --strip-components=1
-    - chown -R nobody:nogroup /tmp/nexus-work /tmp/nexus-agent
-    - env -i HOME=/tmp/nexus-agent PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OLLAMA_HOST=127.0.0.1:11434 ollama serve > /tmp/nexus-ollama.log 2>&1 &
-    - sleep 5
-    - env -i HOME=/tmp/nexus-agent PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OLLAMA_HOST=127.0.0.1:11434 ollama pull qwen2.5-coder:7b
-    - nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 util-linux
+    - nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+    - install -d -m 0700 -o nobody -g nogroup /tmp/nexus-model
+    - install -m 0444 evaluator.py tools/gpu_model_smoke.py /tmp/nexus-model/
     - |
-      cd /tmp/nexus-work
-      runuser -u nobody -- env -i HOME=/tmp/nexus-agent PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OLLAMA_HOST=127.0.0.1:11434 timeout 420s opencode run --standalone --model ollama/qwen2.5-coder:7b "Inspect evaluator.py. Create only tests/test_agent_generated.py with Python unittest tests for _unique_object: unique keys keep values, duplicate keys raise ValueError, empty input returns an empty dict. Do not change any other file or run network commands. Explain what you changed." || echo "AGENT_EXECUTION_FAILED"
-      if test -f tests/test_agent_generated.py; then
-        python3 -m unittest tests.test_agent_generated || python3 -m unittest discover -s tests -p test_agent_generated.py
-      else
-        echo "AGENT_DID_NOT_CREATE_TEST"
-        exit 1
+      set -eu
+      local_run() {
+        runuser -u nobody -- env -i HOME=/tmp/nexus-model PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS=/tmp/nexus-model/models OLLAMA_NO_CLOUD=1 "$@"
+      }
+      local_run python3 /tmp/nexus-model/gpu_model_smoke.py --self-test
+      local_run ollama serve >/tmp/nexus-ollama.log 2>&1 &
+      server_pid=$!
+      trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+      local_run python3 /tmp/nexus-model/gpu_model_smoke.py --ready
+      local_run timeout 480s ollama pull qwen2.5-coder:7b
+      cd /tmp/nexus-model
+      result=0
+      local_run timeout 360s python3 gpu_model_smoke.py --run || result=$?
+      if test -f model-smoke-report.json; then
+        install -m 0644 model-smoke-report.json "$CI_PROJECT_DIR/model-smoke-report.json"
       fi
-    - cp /tmp/nexus-work/tests/test_agent_generated.py "$CI_PROJECT_DIR/generated-test.py"
+      exit "$result"
   artifacts:
     when: always
     paths:
-      - generated-test.py
+      - model-smoke-report.json
     expire_in: 1 week
