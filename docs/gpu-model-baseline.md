@@ -9,7 +9,7 @@ It asks the local model for JSON test cases and independently checks their
 expected results and coverage against the checked-in evaluator.
 
 Run manually on GitLab only on experiment/gpu-capability-probe, with
-NEXUS_RUN_GPU_SMOKE=yes. Do not enable scheduled/mirror-triggered pipelines for
+input run_gpu_smoke=yes. Do not enable scheduled/mirror-triggered pipelines for
 this experiment. No paid Duo services; public OSS project only. Do not run if
 the account's compute eligibility or budget has changed.
 
@@ -33,6 +33,8 @@ GitHub Actions runs a CPU-only preflight on pushes to the experiment branch:
 Python compilation, the benchmark's six self-test scenarios and the existing
 unit tests. It downloads no model and does not call GitLab or any AI service.
 Inspect this run before manually launching the GPU benchmark. The GitLab
-manual pipeline form now offers NEXUS_RUN_GPU_SMOKE with a safe default of no;
+manual pipeline form now offers the typed input run_gpu_smoke with a safe default of no;
 choose yes explicitly for the one bounded run. A preflight success is not
 proof of GPU inference or agent coding quality.
+
+Pipeline input is declared in the main file's spec:inputs header; pipeline-level variable entry is not required. The run guard remains manual web-only on this experiment branch.

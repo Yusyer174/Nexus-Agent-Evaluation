@@ -1,13 +1,16 @@
+spec:
+  inputs:
+    run_gpu_smoke:
+      type: string
+      default: "no"
+      options: ["no", "yes"]
+      description: "Run the bounded OSS GPU model benchmark (yes = explicit consent)."
+---
 stages:
   - test
 
 variables:
-  NEXUS_RUN_GPU_SMOKE:
-    value: "no"
-    options:
-      - "no"
-      - "yes"
-    description: "Run the bounded OSS GPU model benchmark. Select yes only for an intentional test."
+  NEXUS_RUN_GPU_SMOKE: $[[ inputs.run_gpu_smoke ]]
 
 workflow:
   rules:
@@ -25,6 +28,7 @@ model-smoke:
   variables:
     GIT_STRATEGY: clone
   script:
+    - test '$[[ inputs.run_gpu_smoke ]]' = yes
     - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 util-linux
     - nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
     - install -d -m 0700 -o nobody -g nogroup /tmp/nexus-model
