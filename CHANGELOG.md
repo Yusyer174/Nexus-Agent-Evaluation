@@ -28,6 +28,8 @@
 - Document the JSON integration contract, security disclosure and contributor workflow.
 - Add a structured bug report form and pull request checklist.
 
+- Add seven external regression tests for exact CLI threshold boundaries ([PR #26](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/26), Aadithya-kl), invalid UTF-8 inputs ([PR #27](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/27), Aadithya-kl), and optional case metadata versus required prediction lists ([PR #28](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/28), jwalith4418-Mj). All three contributions are test-only; 44 tests and six workflows passed on main at `0f4933d`. No evaluator behavior changes or adoption claims.
+
 ## v0.2.0
 
 - Add local Python packaging and the `nexus-evaluate` command-line entry point.

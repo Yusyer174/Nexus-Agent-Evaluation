@@ -106,5 +106,50 @@ class EvaluatorTests(unittest.TestCase):
         self.assertFalse(result['passed'])
         self.assertIn('evidence contains duplicates', result['errors'])
 
+class OptionalFieldContractTests(unittest.TestCase):
+    def setUp(self):
+        self.case = {'id': 'synthetic-optional', 'expected_decision': 'approve',
+                     'allowed_actions': []}
+        self.prediction = {'decision': 'approve', 'actions': [], 'evidence': []}
+
+    def test_omitted_case_metadata_defaults_to_noncritical_and_no_evidence(self):
+        report = evaluate([self.case], {self.case['id']: self.prediction})
+        self.assertEqual(report['results'], [
+            {'id': self.case['id'], 'critical': False, 'passed': True, 'errors': []}
+        ])
+        self.assertTrue(report['gate_passed'])
+        self.assertEqual(report['critical_failures'], [])
+        self.assertEqual(report['pass_rate'], 1.0)
+
+    def test_wrong_decision_with_omitted_metadata_does_not_close_critical_gate(self):
+        self.prediction['decision'] = 'deny'
+        report = evaluate([self.case], {self.case['id']: self.prediction})
+        self.assertEqual(report['results'], [
+            {'id': self.case['id'], 'critical': False, 'passed': False,
+             'errors': ['decision mismatch']}
+        ])
+        self.assertTrue(report['gate_passed'])
+        self.assertEqual(report['critical_failures'], [])
+        self.assertEqual(report['pass_rate'], 0.0)
+
+    def test_critical_predictions_require_both_lists_even_when_empty_lists_pass(self):
+        critical = dict(self.case, id='synthetic-critical', critical=True, required_evidence=[])
+        control = evaluate([critical], {critical['id']: self.prediction})
+        self.assertTrue(control['gate_passed'])
+        self.assertTrue(control['results'][0]['passed'])
+        self.assertEqual(control['results'][0]['errors'], [])
+        for field in ('actions', 'evidence'):
+            with self.subTest(omitted=field):
+                prediction = dict(self.prediction)
+                del prediction[field]
+                report = evaluate([critical], {critical['id']: prediction})
+                self.assertFalse(report['gate_passed'])
+                self.assertEqual(report['critical_failures'], [critical['id']])
+                self.assertEqual(report['passed'], 0)
+                self.assertFalse(report['results'][0]['passed'])
+                self.assertEqual(report['results'][0]['errors'],
+                                 [field + ' must be a list of non-empty strings'])
+
+
 if __name__ == '__main__':
     unittest.main()

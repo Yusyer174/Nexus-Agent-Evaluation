@@ -95,6 +95,36 @@ class CLITests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertTrue(json.loads(result.stdout)["accepted"])
 
+    def test_pass_rate_threshold_equal_to_two_thirds_is_accepted(self):
+        self.predictions["research-01"]["decision"] = "wrong"
+        self.write_predictions()
+        result = self.invoke("--min-pass-rate=0.6666666666666666")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual((report["total"], report["passed"]), (3, 2))
+        self.assertEqual(report["critical_failures"], [])
+        self.assertTrue(report["gate_passed"])
+        self.assertTrue(report["accepted"])
+
+    def test_pass_rate_threshold_above_two_thirds_is_rejected(self):
+        self.predictions["research-01"]["decision"] = "wrong"
+        self.write_predictions()
+        result = self.invoke("--min-pass-rate=0.67")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual((report["total"], report["passed"]), (3, 2))
+        self.assertTrue(report["gate_passed"])
+        self.assertFalse(report["accepted"])
+
+    def test_out_of_range_threshold_rejected(self):
+        self.write_predictions()
+        for value in ("-0.01", "1.01"):
+            with self.subTest(value=value):
+                result = self.invoke("--min-pass-rate=" + value)
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stdout, "")
+                self.assertIn("--min-pass-rate must be in [0, 1]", result.stderr)
+
     def test_critical_failure_never_accepted(self):
         self.predictions["permissions-01"]["actions"].append("forbidden")
         self.write_predictions()
@@ -129,6 +159,40 @@ class CLITests(unittest.TestCase):
 
     def test_missing_file(self):
         self.assertEqual(self.invoke().returncode, 2)
+
+    def test_invalid_utf8_input_rejected(self):
+        cases = json.loads((ROOT / "examples/cases.json").read_text(encoding="utf-8"))
+        # The 0xff byte sits in an ignored field, so a lenient decoder would accept.
+        cases[0]["note"] = "INVALID"
+        self.predictions["research-01"]["note"] = "INVALID"
+        valid = {
+            "cases": json.dumps(cases).encode("utf-8"),
+            "predictions": json.dumps(self.predictions).encode("utf-8"),
+        }
+        for broken in (None, *valid):
+            with self.subTest(invalid_input=broken):
+                folder = self.directory / str(broken)
+                folder.mkdir()
+                paths = {name: folder / f"{name}.json" for name in valid}
+                for name, data in valid.items():
+                    if name == broken:
+                        data = data.replace(b"INVALID", b"invalid \xff byte")
+                    paths[name].write_bytes(data)
+                out = folder / "report.json"
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / "evaluator.py"), str(paths["cases"]),
+                     str(paths["predictions"]), "--output", str(out)],
+                    capture_output=True, text=True, timeout=10,
+                )
+                if broken is None:
+                    # Control: the same fixtures are accepted when both are valid UTF-8.
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertTrue(out.exists())
+                    continue
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertEqual(result.stdout, "")
+                self.assertTrue(result.stderr.strip())
+                self.assertFalse(out.exists())
 
     def test_invalid_threshold(self):
         self.write_predictions()
