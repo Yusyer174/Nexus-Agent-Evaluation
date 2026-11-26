@@ -139,16 +139,19 @@ def run():
         report["generation"] = {k: output[k] for k in (
             "total_duration", "load_duration", "prompt_eval_count",
             "eval_count", "eval_duration") if type(output.get(k)) is int}
+        report["stage"] = "gpu_verification"
+        running = next(m for m in api("/api/ps")["models"] if m["name"] == MODEL)
+        gpu_bytes = running.get("size_vram", 0)
+        report["gpu_bytes"] = gpu_bytes
+        if type(gpu_bytes) is not int or gpu_bytes <= 0:
+            raise ValueError("No model bytes resident in GPU memory")
         report["stage"] = "assessment"
         parsed = json.loads(output["response"], object_pairs_hook=_unique_object)
         if not isinstance(parsed, dict) or set(parsed) != {"cases"}:
             raise ValueError("Invalid response fields")
         result = assess(parsed["cases"])
-        running = next(m for m in api("/api/ps")["models"] if m["name"] == MODEL)
-        gpu_bytes = running.get("size_vram", 0)
         report.update(result)
-        report["gpu_bytes"] = gpu_bytes
-        report["passed"] = result["passed"] and type(gpu_bytes) is int and gpu_bytes > 0
+        report["passed"] = result["passed"]
         report["stage"] = "completed"
     except Exception as exc:
         report["error_type"] = type(exc).__name__

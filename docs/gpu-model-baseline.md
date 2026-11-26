@@ -14,8 +14,7 @@ this experiment. No paid Duo services; public OSS project only. Do not run if
 the account's compute eligibility or budget has changed.
 
 The image is pinned to Ollama 0.40.18 (version checked at runtime); the model
-digest prefix is checked and its full digest recorded. OS package versions and
-image manifest digest are not fully locked. The pipeline is capped at 20 min,
+digest prefix is checked and its full digest recorded. The image manifest is pinned to the digest observed in GitLab job 18406584956; OS package versions are not fully locked. The pipeline is capped at 20 min,
 model download at 480 s and inference at 360 s. It reports GPU-resident model
 bytes, basic generation metrics, case count, coverage and pass/fail. Model
 responses are not published. The runner is disposable; the model server and
@@ -38,3 +37,7 @@ choose yes explicitly for the one bounded run. A preflight success is not
 proof of GPU inference or agent coding quality.
 
 Pipeline input is declared in the main file's spec:inputs header; pipeline-level variable entry is not required. The run guard remains manual web-only on this experiment branch.
+
+## First GPU run and corrective change
+
+GitLab job 18406584956 (commit 10bce0c8) pulled the Ollama image and installed Python, then failed at the optional nvidia-smi diagnostic (exit 127). No model was downloaded or evaluated. The diagnostic is now optional; device and driver library visibility is logged, and the Ollama /api/ps size_vram check is still mandatory. A CPU-only run fails. The observed image manifest is pinned. This is a proposed fix pending a new bounded run, not a confirmed inference result.
