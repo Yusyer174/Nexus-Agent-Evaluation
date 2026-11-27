@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import time
+from urllib.error import HTTPError
 
 from evaluator import _unique_object, evaluate
 from coding_benchmark import MODELS
@@ -145,16 +146,20 @@ def judge(events, nonce):
 def run():
     start = time.monotonic()
     report = {"mode": "real_gpu", "model": MODEL, "status": "infrastructure_error"}
+    stage = "ollama_ready"
     try:
         ready()
+        stage = "list_models"
         entry = next(m for m in api("/api/tags")["models"] if m["name"] == MODEL)
         report["digest"] = entry["digest"].removeprefix("sha256:")
         if report["digest"] != MODELS[MODEL]:
             raise ValueError("model digest mismatch")
+        stage = "show_model"
         report["capabilities"] = api("/api/show", {"model": MODEL})["capabilities"]
         if "tools" not in report["capabilities"]:
             report["status"] = "tools_unsupported"
             return report
+        stage = "agent_proposal"
         nonce = Path("task-note.txt").read_text().splitlines()[0]
         prompt = PROMPT
         report["attempts"] = []
@@ -182,14 +187,19 @@ def run():
                 break
             prompt = (PROMPT + "\nThe independent checker returned " + result["status"]
                       + ". Read both files again and revise this previous proposal:\n" + result["proposal_text"])
+        stage = "loaded_model"
         loaded = next(m for m in api("/api/ps")["models"] if m["name"] == MODEL)
         report.update(gpu_bytes=loaded["size_vram"], context_length=loaded.get("context_length"))
         if not report["gpu_bytes"] or not report["context_length"]:
             report["status"] = "gpu_or_context_unverified"
+    except HTTPError as exc:
+        # Do not publish response bodies, URLs, headers or raw service logs.
+        report.update(status="infrastructure_error", error_type="HTTPError",
+                      stage=stage, http_status=exc.code)
     except subprocess.TimeoutExpired:
-        report["status"] = "timeout"
+        report.update(status="timeout", stage=stage)
     except (OSError, RuntimeError, StopIteration, ValueError, KeyError, TypeError) as exc:
-        report.update(status="infrastructure_error", error_type=type(exc).__name__)
+        report.update(status="infrastructure_error", error_type=type(exc).__name__, stage=stage)
     finally:
         report["wall_seconds"] = round(time.monotonic() - start, 3)
     return report
