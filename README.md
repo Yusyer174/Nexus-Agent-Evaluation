@@ -120,6 +120,15 @@ The most valuable feedback is **independent and reproducible**, including negati
 - Recent external regression contributions: [#26 — exact CLI pass-rate boundaries](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/26), [#27 — invalid UTF-8 inputs](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/27) (Aadithya-kl), and [#28 — optional case fields and required prediction lists](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/28) (jwalith4418-Mj). All three were merged after successful PR workflows. The combined [44-test suite](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45783225937) and all six workflows passed on main at `0f4933d`.
 - [Contributor guide](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/CONTRIBUTING.md) · [Bug reports and other issues](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues)
 
+Start with one bounded task: [Python packaging checks (#30)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/30),
+[JavaScript/browser CI (#29)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/29),
+or [offline documentation checks (#31)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/31).
+Security and virtualization specialists can [independently critique evidence requirements (#37)](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/37).
+Check comments and open PRs before starting. The [architecture map](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/ARCHITECTURE.md)
+and [team protocol](https://github.com/Yusyer174/Nexus-Agent-Evaluation/blob/main/docs/DEVELOPMENT_TEAM.md)
+explain component boundaries, task ownership and independent review. These are
+voluntary opportunities, not claims that new contributors have joined.
+
 Please use only synthetic or non-sensitive examples and never publish credentials or private agent data. Stars, forks and issue replies are not evidence of genuine usage without supporting details.
 
 ## Repository layout

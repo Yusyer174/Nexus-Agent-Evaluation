@@ -4,14 +4,34 @@ Thanks for considering a contribution. This project is an early, standalone eval
 
 ## Development
 
+Start with the [team coordination and review protocol](docs/DEVELOPMENT_TEAM.md),
+[architecture map](docs/ARCHITECTURE.md) and [assistant agreement](AGENTS.md).
+Check issue comments and open PRs before starting; leave a short outline to avoid
+duplicating a contributor's work. The roadmap links the current small tasks.
+
 Use Python 3.10 or newer. Clone the repository, make changes on a separate branch, and run:
 
 ```sh
 python -m unittest discover -s tests -v
 python evaluator.py examples/cases.json examples/predictions.json
+python evaluator.py examples/cases.json examples/rejected-predictions.json --min-pass-rate 0
 ```
 
-No external packages or API keys are required. Add regression tests for behavior changes. Keep examples synthetic and distinguish example results from real model evaluations.
+The commands should respectively pass, exit 0 and exit 1. The last command must
+report a failed critical gate even at threshold zero. No external packages or API
+keys are required for these checks. Add regression tests for behavior changes.
+Keep examples synthetic and distinguish example results from real model evaluations.
+
+For JavaScript or lab source changes, install Node.js 24 as a development tool and run:
+
+```sh
+python docs/lab/build.py --check
+python docs/lab/test_parity.py
+```
+
+If source generation changed, first run `python docs/lab/build.py` and review the
+generated diff. UI changes also need the optional browser test documented in
+[the lab guide](docs/lab/README.md). Browser CI wiring remains contributor issue #29.
 
 ## Packaging checks
 
