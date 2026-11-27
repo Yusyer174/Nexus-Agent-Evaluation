@@ -43,6 +43,9 @@ def stage(models):
     entry = models / "manifests/registry.ollama.ai/library/qwen2.5-coder/14b"
     entry.parent.mkdir(parents=True)
     entry.write_bytes(manifest)
+    # Ollama 0.40.18 lists both manifest roots via MkdirAll. Prepare
+    # the empty v2 root before the verified store is mounted read-only.
+    (models / "manifests-v2").mkdir()
 
 
 if __name__ == "__main__":
