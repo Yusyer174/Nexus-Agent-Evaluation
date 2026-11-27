@@ -143,6 +143,38 @@ def judge(events, nonce):
     return result
 
 
+def startup_diagnostics(directory=Path("/tmp/service")):
+    """Report only fixed categories and a numeric exit code, never raw logs."""
+    result = {"log_categories": []}
+    try:
+        with (directory / "ollama.exit").open("r", encoding="ascii") as stream:
+            raw = stream.read(16).strip()
+        if raw.isascii() and raw.isdigit() and 0 <= int(raw) <= 255:
+            result["server_exit"] = int(raw)
+    except (OSError, ValueError):
+        pass
+    try:
+        with (directory / "ollama.log").open("rb") as stream:
+            stream.seek(0, os.SEEK_END)
+            stream.seek(max(0, stream.tell() - 65536))
+            tail = stream.read(65536).lower()
+        patterns = {
+            "read_only_store": b"read-only file system",
+            "permission_denied": b"permission denied",
+            "operation_not_permitted": b"operation not permitted",
+            "address_in_use": b"address already in use",
+            "missing_file": b"no such file or directory",
+            "out_of_memory": b"out of memory",
+            "disk_full": b"no space left on device",
+            "missing_library": b"error while loading shared libraries",
+        }
+        result["log_categories"] = [name for name, pattern in patterns.items() if pattern in tail]
+        result["log_available"] = True
+    except OSError:
+        result["log_available"] = False
+    return result
+
+
 def run():
     start = time.monotonic()
     report = {"mode": "real_gpu", "model": MODEL, "status": "infrastructure_error"}
@@ -201,6 +233,8 @@ def run():
     except (OSError, RuntimeError, StopIteration, ValueError, KeyError, TypeError) as exc:
         report.update(status="infrastructure_error", error_type=type(exc).__name__, stage=stage)
     finally:
+        if stage == "ollama_ready" and report["status"] == "infrastructure_error":
+            report["startup_diagnostics"] = startup_diagnostics()
         report["wall_seconds"] = round(time.monotonic() - start, 3)
     return report
 
