@@ -31,7 +31,7 @@ review, a new contributor, adoption, or certification of runtime isolation.
   branch `experiment/opencode-readonly-pilot`. Do not change it or its
   `docs/AGENT_DEVELOPMENT_HANDOFF.md` record.
 
-## Work in progress
+## Initial milestones (results below)
 
 1. Audit current public code and new workflow changes using focused reads and
    synthetic reproductions; do not manufacture defects to justify edits.
@@ -138,8 +138,60 @@ matrix for current cross-platform installation results.
   offering work; listing/search is not proof that no differently named fix exists.
 - No new issue was necessary: the actual contributor-sized gaps already have
   issues with acceptance criteria. Do not create recruitment activity for counts.
-- Next: complete artifact validation, open the engineering PR, inspect its exact
-  head CI and post one useful coordination note on #37 linking the review input.
+- Initial next steps were artifact validation, opening the PR, inspecting CI and
+  posting the review input on #37; these are completed in the checkpoint below.
 - Owner decisions: independent reviewer and eventual PR acceptance/merge.
   Publication/deployment, credentials, external permissions and GPU experiments
   are not authorized by this work and were not performed.
+
+## Delivery checkpoint
+
+- [PR #38](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/38) is open,
+  not merged. Implementation commit `83ad4c9a709a9967990d4157454281b0beb6aa52`;
+  coordination/docs commit `2d3a41823153958525c3f28f50f7129c34516fb8`.
+  This final bookkeeping change updates only this continuity document.
+- The seven workflows for `2d3a418` completed successfully: **17 successful jobs,
+  one intentionally skipped Pages deployment**. Tests cover Python 3.10-3.13;
+  distribution jobs passed on Linux/minimum backend, Linux/current, Windows and
+  macOS. The reproducibility job's generated-distribution validation step passed,
+  including Twine strict and actual artifact installation. This supplies hosted
+  validation despite the local Twine launcher block.
+- Evidence: [unit matrix](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45960513303),
+  [distribution matrix](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45960513467),
+  [controlled builds and strict validation](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45960513301),
+  [CLI portability](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45960513334),
+  [Action](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45960513417),
+  [consumer](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45960513356),
+  [lab](https://github.com/Yusyer174/Nexus-Agent-Evaluation/actions/runs/45960514199).
+- PR merge-ref tree and local tested tree were identical:
+  `8c3a768ba5a816d298cc4e57837136907847a6f3`. No conflict appeared. Inspect
+  [current PR checks](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/38/checks)
+  for the final continuity-only commit; do not relabel the preceding runs as runs
+  of that later SHA. Final head CI status can be recorded in the PR conversation
+  without an endless sequence of documentation commits that retrigger CI.
+- [Coordination note on #37](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/37#issuecomment-7212777410)
+  links a pinned worksheet revision, discloses AI assistance and leaves the
+  independent task open. No outside reviewer has been recruited or approved it.
+- Main remains `098782399bbf8a988c7a800625694cfe33dd52ff`; the pilot remains
+  `c6fe5fd6623a90d3926b31e13e6c1818c32a0e1d`. Local synchronization checked the
+  staged tree against the remote tree before moving the local branch ref; no
+  preexisting work was discarded and no global Git identity was changed.
+
+### Concrete continuation
+
+1. Read this record, Git status, PR #38's current head/checks and new comments.
+   Obtain genuine independent review; a maintainer decides acceptance/merge.
+   Do not merge automatically. If merged later, verify main's own workflows.
+2. Recheck #8/#29/#30/#31/#37 and respect any new contributor outline or PR.
+   Independent isolation review and actual user feedback are still pending.
+3. Before upstream outreach, refresh the two target issues and contribution
+   guidance. Offer review on the existing Inspect author's PR; reproduce the
+   Strands case before promising a patch. Drafts remain unsent.
+4. If publication is separately approved, note that the guarded TestPyPI workflow
+   pins artifacts from source `152220b6c90c3fc1e1ce7638a2f17d6a3c68d1c1`, not this
+   engineering PR. Do not imply those older approved bytes include this fix.
+   The owner must decide whether to retain that original candidate or approve a
+   newly built/validated set, hashes and corresponding publication configuration.
+5. Keep build-tool hash integrity and GitLab build-dependency/history coverage as
+   explicit limits, not completed security work. New issues should follow only
+   after checking for equivalent work and agreeing a concrete contribution scope.
