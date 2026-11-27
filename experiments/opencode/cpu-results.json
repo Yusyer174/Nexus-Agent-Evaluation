@@ -1,0 +1,52 @@
+{
+  "python": "3.12.14",
+  "base": "1c1760c7199cda2367b64d6fa6e12c14dc09a973",
+  "supervisor_checks": [
+    {
+      "command": "python -m unittest discover -s tests -q",
+      "exit": 0,
+      "output": "----------------------------------------------------------------------\nRan 58 tests in 1.115s\n\nOK"
+    },
+    {
+      "command": "python docs/lab/build.py --check",
+      "exit": 0,
+      "output": "index.html matches the reproducible build"
+    },
+    {
+      "command": "python docs/lab/test_parity.py",
+      "exit": 0,
+      "output": "254/254 parity scenarios passed against the repository evaluator\n5/5 deliberate browser-only restrictions passed with specific diagnostics"
+    },
+    {
+      "command": "python tools/gpu_model_smoke.py --self-test",
+      "exit": 0,
+      "output": "Harness self-test passed (six scenarios)"
+    },
+    {
+      "command": "python tools/coding_benchmark.py --self-test",
+      "exit": 0,
+      "output": "Coding benchmark self-tests passed"
+    },
+    {
+      "command": "python tools/patch_benchmark.py --self-test",
+      "exit": 0,
+      "output": "Patch benchmark self-test passed; archived 14B list proposal replay: {'passed_cases': 8, 'total_cases': 8, 'passed': True}"
+    },
+    {
+      "command": "python -m unittest discover -s experiments/opencode -q",
+      "exit": 0,
+      "output": "----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK"
+    },
+    {
+      "command": "bash -n experiments/opencode/run-pilot.sh",
+      "exit": 0,
+      "output": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0,
+      "output": ""
+    }
+  ],
+  "local_yaml_structure": "passed; not GitLab server lint"
+}

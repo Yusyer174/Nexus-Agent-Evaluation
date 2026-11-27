@@ -1,0 +1,248 @@
+[
+  {
+    "job": 18408460203,
+    "artifact": "coding-benchmark-report.json",
+    "sha256": "6609ed2183583666db01093cef8c45621ffb4b64a175ce797199e28d31d8c0d4",
+    "model": "qwen2.5-coder:14b",
+    "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+    "wall_seconds": 181.76,
+    "passed_tasks": 5,
+    "complete": true,
+    "qualified": true,
+    "tasks": [
+      {
+        "id": "test_design",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 9480584559
+      },
+      {
+        "id": "comprehension",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 9480584559
+      },
+      {
+        "id": "bug_repair",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 9480584559
+      },
+      {
+        "id": "implementation_design",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 9480584559
+      },
+      {
+        "id": "permission_boundary",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 9480584559
+      }
+    ]
+  },
+  {
+    "job": 18408460202,
+    "artifact": "coding-benchmark-report.json",
+    "sha256": "51cb12331a0675680013ad4bf677f722dc7fd82c8f0af2433b460f4278242199",
+    "model": "qwen2.5-coder:7b",
+    "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+    "wall_seconds": 157.573,
+    "passed_tasks": 4,
+    "complete": true,
+    "qualified": true,
+    "tasks": [
+      {
+        "id": "test_design",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 4755397016
+      },
+      {
+        "id": "comprehension",
+        "passed": false,
+        "status": "incorrect",
+        "gpu_bytes": 4755397016
+      },
+      {
+        "id": "bug_repair",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 4755397016
+      },
+      {
+        "id": "implementation_design",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 4755397016
+      },
+      {
+        "id": "permission_boundary",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 4755397016
+      }
+    ]
+  },
+  {
+    "job": 18408460204,
+    "artifact": "coding-benchmark-report.json",
+    "sha256": "ba02efab045194e3da8cc8e2540cac3c4a6f9c3e77d9ae1bac07e9f25975160a",
+    "model": "qwen3.5:9b-q4_K_M",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "wall_seconds": 175.127,
+    "passed_tasks": 3,
+    "complete": true,
+    "qualified": false,
+    "tasks": [
+      {
+        "id": "test_design",
+        "passed": false,
+        "status": "incorrect",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "comprehension",
+        "passed": false,
+        "status": "incorrect",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "bug_repair",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "implementation_design",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "permission_boundary",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 5606337412
+      }
+    ]
+  },
+  {
+    "job": 18408460205,
+    "artifact": "coding-benchmark-report.json",
+    "sha256": "651b0081f9f13cb5569a8b9e216ea6d689d352b7f7f593c1df508c0664be7f26",
+    "model": "mimo-v2.6:9b-q4_K_M",
+    "digest": "cc58eacf0e3e4a96556657fe6f29c80ca38401bf242eec83f4eee074dd02bc86",
+    "wall_seconds": 181.226,
+    "passed_tasks": 2,
+    "complete": true,
+    "qualified": false,
+    "tasks": [
+      {
+        "id": "test_design",
+        "passed": false,
+        "status": "incorrect",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "comprehension",
+        "passed": false,
+        "status": "incorrect",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "bug_repair",
+        "passed": false,
+        "status": "incorrect",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "implementation_design",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 5606337412
+      },
+      {
+        "id": "permission_boundary",
+        "passed": true,
+        "status": "correct",
+        "gpu_bytes": 5606337412
+      }
+    ]
+  },
+  {
+    "job": 18409352497,
+    "artifact": "patch-benchmark-report.json",
+    "sha256": "9f9d6b43e18b498fbf880d476c2a6249339bc2d6bff72324817678d2d51c7e19",
+    "model": "qwen2.5-coder:14b",
+    "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+    "wall_seconds": 152.355,
+    "passed_tasks": 2,
+    "complete": true,
+    "qualified": false,
+    "tasks": [
+      {
+        "id": "duplicate_keys",
+        "status": "correct",
+        "passed": true,
+        "gpu_bytes": 9480584559,
+        "source_sha256": "cff58fa40e08272f0904330af3834af30084e030003f03b91f7340af0bd95335",
+        "passed_cases": 5,
+        "total_cases": 5
+      },
+      {
+        "id": "nonempty_text",
+        "status": "correct",
+        "passed": true,
+        "gpu_bytes": 9480584559,
+        "source_sha256": "611a04a28d15802deda2f10089c3a4d2fca52d73cc80c165aa183a4fa6183a0d",
+        "passed_cases": 6,
+        "total_cases": 6
+      },
+      {
+        "id": "unique_string_list",
+        "status": "rejected",
+        "passed": false,
+        "gpu_bytes": 9480584559,
+        "source_sha256": "125d6cf690c14dfcd488bb54aad4fa0f81e250066c650b63e6b2d3b2324fb1fb"
+      }
+    ]
+  },
+  {
+    "job": 18409352498,
+    "artifact": "patch-benchmark-report.json",
+    "sha256": "36db971a8a268d8147af6c9975702d754351a75abd42d620b4b04b38ff043142",
+    "model": "qwen2.5-coder:7b",
+    "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+    "wall_seconds": 141.417,
+    "passed_tasks": 0,
+    "complete": true,
+    "qualified": false,
+    "tasks": [
+      {
+        "id": "duplicate_keys",
+        "status": "rejected",
+        "passed": false,
+        "gpu_bytes": 4755397016,
+        "source_sha256": "c713bd0ad013603cba8cf30f04b7e32638f06f7a0aa918fe4831deff47572045"
+      },
+      {
+        "id": "nonempty_text",
+        "status": "incorrect",
+        "passed": false,
+        "gpu_bytes": 4755397016,
+        "source_sha256": "879ab721740b3701696985248abba0c03542bd84878f7ecd3fb405a07b2ad20d",
+        "passed_cases": 4,
+        "total_cases": 6
+      },
+      {
+        "id": "unique_string_list",
+        "status": "rejected",
+        "passed": false,
+        "gpu_bytes": 4755397016,
+        "source_sha256": "5b3eb75cb1c7e9ba9d9278da797056eb6ee0860ebb35758a5d51658b184d6208"
+      }
+    ]
+  }
+]

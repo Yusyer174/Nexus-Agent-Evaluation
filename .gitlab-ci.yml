@@ -3,7 +3,7 @@ spec:
     run_gpu_smoke:
       type: string
       default: "no"
-      options: ["no", "diagnostics", "yes", "compare", "patches"]
+      options: ["no", "diagnostics", "yes", "compare", "patches", "agent-readonly"]
       description: "Choose patches for bounded patch screening, compare for model comparison, yes for baseline, or diagnostics."
 ---
 stages:
@@ -14,6 +14,7 @@ variables:
 
 workflow:
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/opencode-readonly-pilot" && $NEXUS_RUN_GPU_SMOKE == "agent-readonly"'
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "experiment/gpu-capability-probe" && ($NEXUS_RUN_GPU_SMOKE == "diagnostics" || $NEXUS_RUN_GPU_SMOKE == "yes" || $NEXUS_RUN_GPU_SMOKE == "compare" || $NEXUS_RUN_GPU_SMOKE == "patches")'
     - when: never
 
@@ -220,4 +221,32 @@ patch-screening:
     paths:
       - cuda-driver-report.json
       - patch-benchmark-report.json
+    expire_in: 1 week
+
+opencode-readonly:
+  stage: test
+  rules:
+    - if: '$NEXUS_RUN_GPU_SMOKE == "agent-readonly"'
+  image: nvcr.io/nvidia/cuda:12.1.1-base-ubuntu22.04@sha256:457a4076c56025f51217bff647ca631c7880ad3dbf546b03728ba98297ebbc22
+  tags: [saas-linux-medium-amd64-gpu-standard]
+  timeout: 25m
+  variables:
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  script:
+    - test '$[[ inputs.run_gpu_smoke ]]' = agent-readonly
+    - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq bubblewrap util-linux python3 curl ca-certificates zstd
+    - |
+      set -eu
+      stage=$(mktemp -d)
+      install -m 0444 evaluator.py tools/patch_benchmark.py tools/coding_benchmark.py tools/gpu_model_smoke.py tools/cuda_driver_probe.py experiments/opencode/pilot.py experiments/opencode/stage_model.py "$stage/"
+      install -m 0444 experiments/opencode/opencode.json "$stage/policy.json"
+      install -m 0555 experiments/opencode/run-pilot.sh "$stage/"
+      chown nobody:nogroup "$stage"
+      status=0
+      runuser -u nobody -- env -i HOME="$stage" PATH=/usr/bin:/bin LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/nvidia/lib:/usr/lib/x86_64-linux-gnu setpriv --no-new-privs bash "$stage/run-pilot.sh" || status=$?
+      if test -f "$stage/report.json"; then install -m 0644 "$stage/report.json" opencode-report.json; fi
+      exit "$status"
+  artifacts:
+    when: always
+    paths: [opencode-report.json]
     expire_in: 1 week

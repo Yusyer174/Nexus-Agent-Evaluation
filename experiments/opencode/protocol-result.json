@@ -1,0 +1,14 @@
+{
+  "mode": "scripted_provider_real_cli",
+  "gpu_minutes": 0,
+  "model_inferences": 0,
+  "checks": {
+    "task-note.txt": true,
+    "blocked.txt": true,
+    "../outside.txt": true,
+    "opencode.json": true,
+    "offered_only_read": true
+  },
+  "cli": "opencode v2.4.2",
+  "passed": true
+}
