@@ -98,3 +98,27 @@ class InfrastructureTests(unittest.TestCase):
         self.assertEqual(result["http_status"], 500)
         self.assertNotIn("private", json.dumps(result))
         self.assertNotIn("attempts", result)
+
+    def test_startup_diagnostics_are_bounded_and_sanitized(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "ollama.log").write_bytes(b"synthetic private value\n" + b"x" * 70000 +
+                                              b"\nread-only file system\nprivate service detail")
+            (root / "ollama.exit").write_text("1\n", encoding="ascii")
+            result = pilot.startup_diagnostics(root)
+            self.assertEqual(result, {"log_categories": ["read_only_store"],
+                                      "server_exit": 1, "log_available": True})
+            self.assertNotIn("private", json.dumps(result))
+            (root / "ollama.exit").write_text("invalid private data", encoding="ascii")
+            self.assertNotIn("server_exit", pilot.startup_diagnostics(root))
+
+    def test_readiness_failure_includes_startup_diagnostics(self):
+        diagnostic = {"log_categories": ["read_only_store"], "server_exit": 1,
+                      "log_available": True}
+        with patch.object(pilot, "ready", side_effect=RuntimeError("synthetic startup failure")), \
+             patch.object(pilot, "startup_diagnostics", return_value=diagnostic):
+            result = pilot.run()
+        self.assertEqual(result["status"], "infrastructure_error")
+        self.assertEqual(result["stage"], "ollama_ready")
+        self.assertEqual(result["startup_diagnostics"], diagnostic)
+        self.assertNotIn("attempts", result)
