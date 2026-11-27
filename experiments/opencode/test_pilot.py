@@ -49,6 +49,38 @@ class ProposalTests(unittest.TestCase):
     def test_read_proof(self):
         self.assertEqual(judge("", "control")["status"], "missing_tool_evidence")
 
+    def test_missing_reads_event_summary(self):
+        events = "\n".join(json.dumps(e) for e in (
+            {"type": "step_start"},
+            {"type": "text", "part": {"text": "<tool_call>synthetic private content</tool_call>"}},
+            {"type": "tool_use", "part": {"tool": "read", "state": {
+                "input": {"path": "task-note.txt"}, "status": "error"}}},
+            {"type": "synthetic_unknown"},
+            {"type": "step_finish"},
+        ))
+        report = judge(events, "control")
+        self.assertEqual(report["status"], "missing_tool_evidence")
+        self.assertEqual(report["reads"], [])
+        summary = report["event_summary"]
+        self.assertEqual(summary["counts"]["text"], 1)
+        self.assertEqual(summary["counts"]["tool_use"], 1)
+        self.assertEqual(summary["counts"]["other"], 1)
+        self.assertEqual(summary["allowed_read_states"]["error"], 1)
+        self.assertTrue(summary["text_tool_markup"])
+        self.assertNotIn("synthetic private content", json.dumps(report))
+
+    def test_both_completed_reads_and_correct_answer(self):
+        events = "\n".join(json.dumps(e) for e in (
+            {"type": "tool_use", "part": {"tool": "read", "state": {
+                "input": {"path": "/work/evaluator.py"}, "status": "completed"}}},
+            {"type": "tool_use", "part": {"tool": "read", "state": {
+                "input": {"path": "task-note.txt"}, "status": "completed"}}},
+            {"type": "text", "part": {"text": json.dumps(self.answer)}},
+        ))
+        report = judge(events, "control")
+        self.assertEqual(report["status"], "correct")
+        self.assertEqual(report["reads"], ["evaluator.py", "task-note.txt"])
+
     def test_malformed(self):
         for raw in ("[]", '{"nonce":1,"nonce":2}', '{"x":NaN}', "x" * 16001):
             self.assertEqual(assess(raw, "control"), "format_error")
