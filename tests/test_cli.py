@@ -29,6 +29,26 @@ class CLITests(unittest.TestCase):
     def write_predictions(self):
         self.input.write_text(json.dumps(self.predictions), encoding="utf-8")
 
+    def test_parser_depth_errors_exit_two_without_writing_a_report(self):
+        nested = self.directory / "deep.json"
+        nested.write_text("[" * 10000 + "0" + "]" * 10000, encoding="utf-8")
+        output = self.directory / "existing-report.json"
+        valid_cases = ROOT / "examples/cases.json"
+        valid_predictions = ROOT / "examples/predictions.json"
+        for cases, predictions in ((nested, valid_predictions), (valid_cases, nested)):
+            with self.subTest(input=str(cases if cases == nested else predictions)):
+                output.write_text("preserve existing report", encoding="utf-8")
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / "evaluator.py"), str(cases), str(predictions),
+                     "--output", str(output)], capture_output=True, text=True, timeout=10,
+                )
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn("JSON nesting exceeds parser limit", result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
+                self.assertEqual(result.stdout, "")
+                self.assertEqual(output.read_text(encoding="utf-8"), "preserve existing report")
+                self.assertEqual(nested.stat().st_size, 20001)
+
     def test_accepted_report(self):
         self.write_predictions()
         out = self.directory / "report.json"

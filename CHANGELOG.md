@@ -1,8 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Report JSON decoder nesting-limit failures as CLI input errors (exit 2),
+  without a traceback or overwriting an existing report. Evaluation rules,
+  report fields and the browser's documented input limits are unchanged.
+
 ## 0.3.0rc1 — unpublished review candidate
 
-- Prepare PyPI-compatible documentation links, controlled reproducible maintainer archives and an owner-approved Trusted Publishing procedure; reject ambiguous/special archive members, retain executable file modes and resolve generated artifact names without a fixed version. No upload workflow is enabled.
+- Prepare PyPI-compatible documentation links, controlled reproducible maintainer archives and an owner-approved Trusted Publishing procedure; reject ambiguous/special archive members, retain executable file modes and resolve generated artifact names without a fixed version. Later maintenance added a guarded, manual TestPyPI workflow; ordinary tests do not publish packages.
 - Add eight synthetic declaration-lab scenarios, regression checks for wrong decisions, unlisted actions and missing evidence, and explicit counterexamples documenting the limits of declaration-only evaluation.
 - Add deterministic report-order and input-type regressions; cover duplicate evidence IDs and duplicate keys in cases input.
 - Add the browser-based Evaluation Lab and link its published demo. No model benchmark or independent adoption is claimed.
