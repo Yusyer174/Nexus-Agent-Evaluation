@@ -117,8 +117,13 @@ def assess(raw, nonce):
 
 def judge(events, nonce):
     reads, answers = set(), []
+    # Fixed counters describe the protocol without retaining raw messages.
+    counts = {kind: 0 for kind in ("text", "tool_use", "step_start", "step_finish", "error", "other")}
+    read_states = {kind: 0 for kind in ("completed", "error", "other")}
     for line in events.splitlines():
         event = parse(line)
+        kind = event["type"]
+        counts[kind if isinstance(kind, str) and kind in counts else "other"] += 1
         part = event.get("part", {})
         if event["type"] == "error":
             return {"status": "agent_error", "error": event.get("error", {}).get("type")}
@@ -129,12 +134,20 @@ def judge(events, nonce):
                 path = path.removeprefix("/work/").removeprefix("./")
             if part["tool"] != "read" or path not in READS:
                 return {"status": "scope_violation"}
-            if state["status"] == "completed":
+            state_name = state["status"]
+            read_states[state_name if isinstance(state_name, str) and state_name in read_states else "other"] += 1
+            if state_name == "completed":
                 reads.add(path)
         if event["type"] == "text":
             answers.append(part["text"])
     if reads != READS:
-        return {"status": "missing_tool_evidence", "reads": sorted(reads)}
+        raw = "".join(answers)
+        return {"status": "missing_tool_evidence", "reads": sorted(reads),
+                "event_summary": {"counts": counts, "allowed_read_states": read_states,
+                                  "output_bytes": len(events.encode("utf-8")),
+                                  "answer_chars": len(raw),
+                                  "text_tool_markup": any(marker in raw.lower() for marker in
+                                      ("<tool_call", "[tool_call", '"tool_calls"'))}}
     raw = "".join(answers)
     result = {"status": assess(raw, nonce), "reads": sorted(reads),
               "answer_sha256": hashlib.sha256(raw.encode()).hexdigest()}
