@@ -53,17 +53,20 @@ done
 mkdir harness
 cp pilot.py patch_benchmark.py coding_benchmark.py gpu_model_smoke.py evaluator.py harness/
 # Child processes inherit only the stripped CI launch environment. Runtime data lives in tmpfs.
-# Only Python's scored report reaches the artifact; raw generated output stays in the namespace.
+# Ollama startup pruning cannot modify the verified read-only store.
+# Only Python's scored report reaches the artifact; raw generated output and service logs stay in the namespace.
 set +e
 timeout --kill-after=5s 435s "${sandbox[@]}" --ro-bind "$HOME/model-store" /models \
   --ro-bind "$HOME/ollama" /ollama --ro-bind "$HOME/bin-agent" /bin-agent \
   --ro-bind "$HOME/harness" /harness --setenv PYTHONPATH /harness \
-  --setenv OLLAMA_MODELS /models --setenv OLLAMA_NO_CLOUD 1 \
+  --setenv OLLAMA_MODELS /models --setenv OLLAMA_NO_CLOUD 1 --setenv OLLAMA_NOPRUNE 1 \
   --setenv OLLAMA_HOST 127.0.0.1:11434 --setenv OLLAMA_CONTEXT_LENGTH 16384 \
   --setenv OLLAMA_NUM_PARALLEL 1 /bin/sh -ec '
   umask 077
   mkdir /tmp/agent /tmp/service
-  HOME=/tmp/service /ollama/bin/ollama serve >/dev/null 2>&1 &
+  (service_status=0
+   HOME=/tmp/service /ollama/bin/ollama serve >/tmp/service/ollama.log 2>&1 || service_status=$?
+   printf "%s\n" "$service_status" >/tmp/service/ollama.exit) &
   ulimit -f 8192
   python3 /harness/pilot.py --isolated-run' >report.tmp
 code=$?
