@@ -12,7 +12,25 @@ NEXUS Agent Evaluation is a small educational Python evaluator for **structured 
 
 The [declaration lab and candidate checklist](DECLARATION_LAB.md) document additional synthetic cases and known limits.
 
-[Issue #9](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) tracks a regression test for the existing CLI exit status of 2 when the case file contains duplicate JSON object keys. [PR #16](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/16) contains the contributor’s test and its review and CI status.
+[Issue #9](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/9) was completed by [PR #16](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/16), preserving Arniedude5342's duplicate-case-key regression. It is not an available task.
+
+## Coordinated contributor queue
+
+Checked on 2026-11-27; recheck comments and PRs before claiming any task.
+
+| Opportunity | Scope and acceptance | Suitable background |
+| --- | --- | --- |
+| [#29](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/29) | Wire the existing Chromium smoke test into read-only CI | JavaScript testing / DevOps; beginner-friendly |
+| [#30](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/30) | Compare project, wheel and sdist versions, including stale artifacts | Python / packaging; beginner-friendly |
+| [#31](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/31) | Offline Markdown paths and heading-anchor checks | Python / documentation testing; beginner-friendly |
+| [#37](https://github.com/Yusyer174/Nexus-Agent-Evaluation/issues/37) | Independent critique and guide for isolation evidence | Virtualization / defensive security / assurance specialist |
+
+All four have explicit acceptance criteria; none is implemented by the engineering
+coordination work. #37 remains an external review opportunity, with
+[maintainer-prepared synthetic input](ISOLATION_REVIEW_PREPARATION.md).
+Use [the team protocol](DEVELOPMENT_TEAM.md) for task claims, handoffs, conflict
+handling and definition of done. For upstream work, see
+[the researched proposals](OSS_COLLABORATION_PROPOSALS.md); drafts are not contributions.
 
 ## Next: integration quality
 

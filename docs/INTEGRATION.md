@@ -43,6 +43,12 @@ Run: `nexus-evaluate cases.json predictions.json --output report.json`.
 
 - A case passes only if its decision matches, every declared action belongs to the allowed set, and every required evidence identifier is present.
 - Missing or malformed case outputs fail their case. Duplicate JSON object keys are rejected during parsing.
+- Excessive JSON nesting rejected by Python's decoder is an input error (exit 2,
+  no traceback). The decoder's limit depends on the interpreter and may depend
+  on its available stack. No fixed nesting depth is guaranteed to trigger the
+  decoder error. A decoded value must still satisfy the input schema. These
+  errors do not replace an existing report; the browser has separately
+  documented limits.
 - A failed case marked `critical`, or an extra prediction ID, closes the **critical gate**.
 - The overall acceptance requires both the critical gate to pass and `pass_rate >= min_pass_rate` (default 1.0).
 - `--min-pass-rate` is a fraction from 0 to 1; relaxing it **never** bypasses the critical gate.

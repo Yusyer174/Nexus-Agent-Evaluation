@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -5,8 +7,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from evaluator import evaluate
+from evaluator import evaluate, main
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,6 +31,62 @@ class CLITests(unittest.TestCase):
 
     def write_predictions(self):
         self.input.write_text(json.dumps(self.predictions), encoding="utf-8")
+
+    def test_decoder_recursion_error_exit_two_without_writing_a_report(self):
+        # Inject the decoder exception instead of assuming an interpreter's depth limit.
+        rejected = self.directory / "decoder-error.json"
+        marker = '"synthetic decoder failure"'
+        rejected.write_text(marker, encoding="utf-8")
+        output = self.directory / "existing-report.json"
+        valid_cases = ROOT / "examples/cases.json"
+        valid_predictions = ROOT / "examples/predictions.json"
+        original_loads = json.loads
+
+        def decode(text, *args, **kwargs):
+            if text == marker:
+                raise RecursionError("synthetic decoder recursion limit")
+            return original_loads(text, *args, **kwargs)
+
+        for label, cases, predictions in (
+            ("cases", rejected, valid_predictions),
+            ("predictions", valid_cases, rejected),
+        ):
+            with self.subTest(input=label):
+                output.write_text("preserve existing report", encoding="utf-8")
+                stdout, stderr = io.StringIO(), io.StringIO()
+                argv = ["evaluator.py", str(cases), str(predictions), "--output", str(output)]
+                with patch("sys.argv", argv), patch("evaluator.json.loads", side_effect=decode), \
+                        contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                    with self.assertRaises(SystemExit) as failure:
+                        main()
+                self.assertEqual(failure.exception.code, 2)
+                self.assertIn("JSON nesting exceeds parser limit", stderr.getvalue())
+                self.assertNotIn("Traceback", stderr.getvalue())
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertEqual(output.read_text(encoding="utf-8"), "preserve existing report")
+
+    def test_invalid_nested_shape_exit_two_without_writing_a_report(self):
+        # This small input parses but violates both input schemas on every supported Python.
+        nested = self.directory / "nested.json"
+        nested.write_text("[[0]]", encoding="utf-8")
+        output = self.directory / "existing-report.json"
+        valid_cases = ROOT / "examples/cases.json"
+        valid_predictions = ROOT / "examples/predictions.json"
+        for label, cases, predictions, expected in (
+            ("cases", nested, valid_predictions, "each case must be an object"),
+            ("predictions", valid_cases, nested, "predictions must be an object keyed by case ID"),
+        ):
+            with self.subTest(input=label):
+                output.write_text("preserve existing report", encoding="utf-8")
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / "evaluator.py"), str(cases), str(predictions),
+                     "--output", str(output)], capture_output=True, text=True, timeout=10,
+                )
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn(expected, result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
+                self.assertEqual(result.stdout, "")
+                self.assertEqual(output.read_text(encoding="utf-8"), "preserve existing report")
 
     def test_accepted_report(self):
         self.write_predictions()
