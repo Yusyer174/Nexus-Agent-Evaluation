@@ -195,3 +195,10 @@ matrix for current cross-platform installation results.
 5. Keep build-tool hash integrity and GitLab build-dependency/history coverage as
    explicit limits, not completed security work. New issues should follow only
    after checking for equivalent work and agreeing a concrete contribution scope.
+
+
+## Follow-up: 2026-11-28 — PR #38 portability
+
+External review at [PR #38](https://github.com/Yusyer174/Nexus-Agent-Evaluation/pull/38#issuecomment-7224985678) established that the 10,000-level fixture is interpreter- and stack-dependent. The reviewer confirmed the CLI error-handling fix but found the regression assertion fails on CPython 3.14+ when decoding succeeds.
+
+The follow-up separates the injected decoder recursion error from a subprocess check of invalid input shape, adds Python 3.14 to the ordinary unit matrix, and clarifies the input contract. No runtime evaluator code, scoring policy, packaging version, or pilot branch is changed. Prior independent review is not approval of this follow-up. New hosted CI and maintainer review remain required; no local test execution is claimed for this revision.
